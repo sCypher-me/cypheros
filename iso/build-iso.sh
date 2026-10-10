@@ -21,6 +21,8 @@ P="$WORK/perfil"
 echo "${C}2/5${R} Adicionando os pacotes do CypherOS..."
 # o instalador gráfico precisa destes (a maioria já vem no releng)
 { echo; echo "# CypherOS"; grep -v -e '^#' -e '^$' "$SRC/pacotes.txt"; printf '%s\n' git gptfdisk parted cryptsetup dosfstools btrfs-progs grub jq curl; } >> "$P/packages.x86_64"
+# o grml-zsh-config do releng traz um /etc/skel/.zshrc que brigaria com o do CypherOS
+sed -i '/^grml-zsh-config$/d' "$P/packages.x86_64"
 sort -u -o "$P/packages.x86_64" "$P/packages.x86_64"
 
 sed -i \
@@ -42,7 +44,8 @@ PD
 echo "${C}3/5${R} Compilando os wallpapers e copiando o sistema..."
 "$SRC/shell/shaders/build.sh"
 A="$P/airootfs"
-"$SRC/instalar-arquivos.sh" "$A"
+# /usr/lib/os-release pertence ao pacote filesystem: na ISO ele não pode vir pronto (o pacman recusa)
+CYPHER_SET_OSRELEASE=0 "$SRC/instalar-arquivos.sh" "$A"
 # cópia completa para o instalador usar
 install -d "$A/usr/share/cypheros/src"
 cp -r "$SRC/shell" "$SRC/config" "$SRC/bin" "$SRC/share" "$SRC/plymouth" "$SRC/pacotes.txt" "$SRC/instalar-arquivos.sh" "$SRC/ativar-login-e-boot.sh" "$A/usr/share/cypheros/src/"
