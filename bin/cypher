@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# cypher: comando central do CypherOS.
+set -euo pipefail
+
+CFG="$HOME/.config/cypheros/config.json"
+IPC=(qs -c cypheros ipc call)
+C1=$'\e[38;2;56;225;255m'; M=$'\e[38;2;169;180;207m'; R=$'\e[0m'
+
+ajuda() {
+cat <<AJUDA
+${C1}cypher${R} · comando do CypherOS
+
+  ${C1}cypher info${R}                     mostra o sistema
+  ${C1}cypher tema${R} [prisma|oceano|por-do-sol|grafite]
+  ${C1}cypher tema auto${R} [dia] [noite]     tema por horário (ex.: auto prisma grafite)
+  ${C1}cypher tema fixo${R}                desliga o tema por horário
+  ${C1}cypher tema instalar${R} <arquivo|url>  instala um tema da comunidade (.json)
+  ${C1}cypher temas${R}                    lista os temas instalados
+  ${C1}cypher cor${R} <#hex> [#hex2]        muda as cores de destaque
+  ${C1}cypher wallpaper${R} <aurora|nebulosa|particulas|ondas|pulso>
+  ${C1}cypher wallpaper imagem${R} <arquivo>
+  ${C1}cypher wallpaper video${R} <arquivo>
+  ${C1}cypher barra${R} <cima|baixo>
+  ${C1}cypher central${R} [página]          abre as configurações (Central CypherOS)
+  ${C1}cypher loja${R} [página]             abre a Loja Cypher (destaques, pesquisar, instalados, atualizacoes)
+  ${C1}cypher monitor${R}                  abre o Monitor do sistema
+  ${C1}cypher config${R}                   abre o arquivo de configuração
+  ${C1}cypher recarregar${R}               reinicia o shell
+  ${C1}cypher atualizar${R}                atualiza tudo (Arch, AUR e Flatpak), com snapshot antes
+  ${C1}cypher snapshots${R}                lista os pontos de restauração
+  ${C1}cypher restaurar${R} [número]        volta o sistema para um snapshot
+  ${C1}cypher backup${R}                   guarda suas configurações e a lista de apps
+  ${C1}cypher restaurar-backup${R} <arquivo>  traz de volta um backup
+  ${C1}cypher bloquear${R}                 bloqueia a tela
+  ${C1}cypher foco${R} [minutos]            liga/desliga o modo foco (Pomodoro)
+  ${C1}cypher perfil${R} [nome]             troca de perfil (sem nome: o próximo)
+  ${C1}cypher jogo${R}                     liga/desliga o modo jogo
+  ${C1}cypher cidade${R} <nome>             cidade do clima
+  ${C1}cypher sons${R} <ligar|desligar>
+  ${C1}cypher gravar${R} [area]             começa/para a gravação de tela
+  ${C1}cypher cor-da-tela${R}               copia a cor de um ponto da tela
+  ${C1}cypher musica${R}                   liga/desliga o wallpaper que dança com a música
+AJUDA
+}
+
+tem_snapper() { [ "$(findmnt -no FSTYPE /)" = btrfs ] && command -v snapper >/dev/null && [ -f /etc/snapper/configs/root ]; }
+
+set_key() {  # set_key chave valor-json
+    local tmp; tmp=$(mktemp)
+    jq --arg k "$1" --argjson v "$2" '.[$k] = $v' "$CFG" > "$tmp" && mv "$tmp" "$CFG"
+}
+
+case "${1:-ajuda}" in
+    info) fastfetch ;;
+    tema)
+        if [ -z "${2:-}" ]; then echo "Tema atual: ${C1}$(jq -r .theme "$CFG")${R}"; exit; fi
+        if [ "$2" = auto ]; then
+            set_key themeAuto true
+            [ -n "${3:-}" ] && set_key themeDay "\"$3\""
+            [ -n "${4:-}" ] && set_key themeNight "\"$4\""
+            echo "${M}tema por horário ligado${R} ($(jq -r .themeDay "$CFG") de dia, $(jq -r .themeNight "$CFG") à noite)"; exit
+        fi
+        if [ "$2" = instalar ]; then
+            src="${3:?informe o arquivo ou endereço do tema}"; mkdir -p "$HOME/.config/cypheros/temas"
+            id=$(basename "$src" .json | tr 'A-Z' 'a-z' | tr -c 'a-z0-9-\n' '-')
+            tmp=$(mktemp)
+            case "$src" in http*) curl -sf "$src" -o "$tmp" ;; *) cp "$src" "$tmp" ;; esac
+            jq -e '.bg and .accent' "$tmp" >/dev/null || { rm -f "$tmp"; echo "Esse arquivo não parece um tema do CypherOS."; exit 1; }
+            mv "$tmp" "$HOME/.config/cypheros/temas/$id.json"; echo "${M}tema${R} ${C1}$id${R} instalado. Use: cypher tema $id"; exit
+        fi
+        if [ "$2" = fixo ]; then set_key themeAuto false; echo "${M}tema por horário desligado${R}"; exit; fi
+        set_key themeAuto false
+        set_key theme "\"$2\""; set_key accent '""'; set_key accent2 '""'
+        echo "${M}tema${R} ${C1}$2${R} aplicado" ;;
+    temas)
+        echo "prisma oceano por-do-sol grafite"
+        for f in /usr/share/cypheros/temas/*.json "$HOME"/.config/cypheros/temas/*.json; do [ -f "$f" ] && printf '%s  %s\n' "$(basename "$f" .json)" "$(jq -r .name "$f")"; done ;;
+    cor)
+        set_key accent "\"$2\""; [ -n "${3:-}" ] && set_key accent2 "\"$3\""
+        echo "${M}cores atualizadas${R}" ;;
+    wallpaper|wp)
+        case "${2:-}" in
+            imagem) set_key wallpaperMode '"image"'; set_key wallpaperImage "\"$(realpath "$3")\"" ;;
+            video)  set_key wallpaperMode '"video"'; set_key wallpaperVideo "\"$(realpath "$3")\"" ;;
+            aurora|nebulosa|particulas|ondas|pulso) set_key wallpaperMode '"shader"'; set_key wallpaperShader "\"$2\"" ;;
+            *) echo "Use: cypher wallpaper <aurora|nebulosa|particulas|ondas|pulso|imagem ARQ|video ARQ>"; exit 1 ;;
+        esac
+        echo "${M}wallpaper atualizado${R}" ;;
+    barra)
+        case "${2:-}" in cima) set_key barPosition '"top"' ;; baixo) set_key barPosition '"bottom"' ;; *) echo "Use: cypher barra <cima|baixo>"; exit 1 ;; esac ;;
+    central) cypher-app central "${2:-}" ;;
+    loja) cypher-app loja "${2:-}" ;;
+    monitor) cypher-app monitor ;;
+    config) "${EDITOR:-nano}" "$CFG" ;;
+    recarregar) pkill -x quickshell || true; pkill -x qs || true; sleep 0.3; setsid qs -c cypheros >/dev/null 2>&1 & echo "${M}shell reiniciado${R}" ;;
+    atualizar)
+        tem_snapper && echo "${M}O snapper guarda um ponto de restauração antes e depois da atualização.${R}"
+        sudo pacman -Syu || exit 1
+        if command -v paru >/dev/null; then paru -Sua; elif command -v yay >/dev/null; then yay -Sua; fi
+        command -v flatpak >/dev/null && flatpak update -y
+        notify-send -a CypherOS "Sistema atualizado" "Tudo em dia." 2>/dev/null || true
+        echo "${C1}◆ Tudo atualizado.${R}" ;;
+    snapshots)
+        tem_snapper || { echo "Snapshots precisam do disco em btrfs com snapper (o instalador do CypherOS já faz isso)."; exit 1; }
+        snapper -c root list ;;
+    restaurar)
+        tem_snapper || { echo "Snapshots precisam do disco em btrfs com snapper."; exit 1; }
+        if [ -z "${2:-}" ]; then snapper -c root list; read -rp "Número do snapshot para voltar: " N; else N="$2"; fi
+        [[ "$N" =~ ^[0-9]+$ ]] || { echo "Número inválido."; exit 1; }
+        echo "${C1}O sistema vai voltar ao snapshot $N. Seus arquivos pessoais (/home) não mudam.${R}"
+        read -rp "Confirmar? [s/N] " OK; [ "$OK" = s ] || exit 0
+        sudo snapper -c root rollback "$N" && echo "${C1}Pronto. Reinicie para entrar no sistema restaurado: reboot${R}" ;;
+    backup)
+        DEST="$HOME/CypherOS-backups"; mkdir -p "$DEST"
+        TMP=$(mktemp -d); F="$DEST/backup-$(date +%Y-%m-%d_%H-%M).tar.gz"
+        pacman -Qqen > "$TMP/pacotes-arch.txt"; pacman -Qqem > "$TMP/pacotes-aur.txt"
+        command -v flatpak >/dev/null && flatpak list --app --columns=application > "$TMP/flatpaks.txt"
+        LISTAS=(pacotes-arch.txt pacotes-aur.txt); [ -f "$TMP/flatpaks.txt" ] && LISTAS+=(flatpaks.txt)
+        tar -czf "$F" -C "$HOME" --ignore-failed-read .config/cypheros .config/hypr .config/cypher-term .config/gtk-3.0 .config/gtk-4.0 .config/foot .zshrc \
+            -C "$TMP" "${LISTAS[@]}" 2>/dev/null
+        rm -rf "$TMP"
+        ls -1t "$DEST"/backup-*.tar.gz 2>/dev/null | tail -n +11 | xargs -r rm -f   # guarda os 10 mais novos
+        echo "${C1}◆ Backup salvo:${R} $F"
+        notify-send -a CypherOS "Backup feito" "$F" 2>/dev/null || true ;;
+    restaurar-backup)
+        F="${2:-$(ls -1t "$HOME"/CypherOS-backups/backup-*.tar.gz 2>/dev/null | head -1)}"
+        [ -f "$F" ] || { echo "Backup não encontrado. Use: cypher restaurar-backup <arquivo>"; exit 1; }
+        TMP=$(mktemp -d); tar -xzf "$F" -C "$TMP"
+        for d in cypheros hypr cypher-term gtk-3.0 gtk-4.0 foot; do [ -d "$TMP/.config/$d" ] && rm -rf "$HOME/.config/$d" && cp -r "$TMP/.config/$d" "$HOME/.config/$d"; done
+        [ -f "$TMP/.zshrc" ] && cp "$TMP/.zshrc" "$HOME/.zshrc"
+        echo "${C1}◆ Configurações restauradas.${R}"
+        read -rp "Reinstalar também os apps desse backup? [s/N] " OK
+        if [ "$OK" = s ]; then
+            sudo pacman -S --needed - < "$TMP/pacotes-arch.txt"
+            if [ -s "$TMP/pacotes-aur.txt" ]; then
+                if command -v paru >/dev/null; then paru -S --needed - < "$TMP/pacotes-aur.txt"; elif command -v yay >/dev/null; then yay -S --needed - < "$TMP/pacotes-aur.txt"; fi
+            fi
+            [ -s "$TMP/flatpaks.txt" ] && command -v flatpak >/dev/null && xargs -r flatpak install -y flathub < "$TMP/flatpaks.txt"
+        fi
+        rm -rf "$TMP" ;;
+    bloquear) "${IPC[@]}" lock lock ;;
+    foco)
+        [ -n "${2:-}" ] && set_key focusMinutes "$2"
+        "${IPC[@]}" focus toggle ;;
+    perfil)
+        if [ -n "${2:-}" ]; then "${IPC[@]}" profile set "$2"; else "${IPC[@]}" profile next; fi ;;
+    jogo) "${IPC[@]}" game toggle ;;
+    gravar) if [ "${2:-}" = area ]; then "${IPC[@]}" record area; else "${IPC[@]}" record toggle; fi ;;
+    cor-da-tela) "${IPC[@]}" tools color ;;
+    musica) "${IPC[@]}" music toggle ;;
+    cidade) shift; set_key weatherCity "$(jq -Rn --arg c "$*" '$c')" ;;
+    sons) [ "${2:-}" = desligar ] && set_key sounds false || set_key sounds true ;;
+    ajuda|-h|--help) ajuda ;;
+    *) echo "Comando desconhecido: $1"; ajuda; exit 1 ;;
+esac

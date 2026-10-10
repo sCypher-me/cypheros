@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Aplica as configurações padrão do CypherOS ao seu usuário, guardando as antigas num backup.
+set -euo pipefail
+BK="$HOME/.config/cypheros-backup-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BK"
+for d in hypr foot fastfetch; do
+    [ -e "$HOME/.config/$d" ] && mv "$HOME/.config/$d" "$BK/"
+    cp -r /etc/skel/.config/$d "$HOME/.config/$d"
+done
+# o que era seu no Hyprland continua valendo
+[ -f "$BK/hypr/hyprland.conf" ] && grep -E '^\s*monitor\s*=' "$BK/hypr/hyprland.conf" >> "$HOME/.config/hypr/usuario.conf" || true
+mkdir -p "$HOME/.config/cypheros" "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+[ -f "$HOME/.config/cypheros/config.json" ] || cp /etc/skel/.config/cypheros/config.json "$HOME/.config/cypheros/"
+[ -f "$HOME/.config/cypheros/term-cores.conf" ] || cp /etc/skel/.config/cypheros/term-cores.conf "$HOME/.config/cypheros/"
+mkdir -p "$HOME/.config/cypher-term"; [ -f "$HOME/.config/cypher-term/usuario.conf" ] || cp /etc/skel/.config/cypher-term/usuario.conf "$HOME/.config/cypher-term/"
+[ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BK/zshrc"
+cp /etc/skel/.zshrc "$HOME/.zshrc"
+echo "Configurações do CypherOS aplicadas. Backup das antigas em: $BK"
+echo "Saia e entre de novo no Hyprland para ver tudo."

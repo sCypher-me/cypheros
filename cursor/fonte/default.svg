@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Prisma: default -->
+<defs>
+  <linearGradient id="borda" gradientUnits="userSpaceOnUse" x1="4" y1="3" x2="28" y2="29">
+    <stop offset="0" stop-color="#38E1FF"/><stop offset="1" stop-color="#A78BFA"/>
+  </linearGradient>
+  <linearGradient id="corpo" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="30">
+    <stop offset="0" stop-color="#151A31"/><stop offset="1" stop-color="#0B1020"/>
+  </linearGradient>
+  <filter id="brilho" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="1.1"/>
+  </filter>
+</defs>
+<path d="M5.00 3.00 L5.00 24.60 L10.10 19.90 L13.40 27.60 L16.90 26.10 L13.70 18.60 L20.60 18.60 Z" fill="none" stroke="#38E1FF" stroke-opacity=".55" stroke-width="3.2" stroke-linejoin="round" filter="url(#brilho)"/>
+<path d="M5.00 3.00 L5.00 24.60 L10.10 19.90 L13.40 27.60 L16.90 26.10 L13.70 18.60 L20.60 18.60 Z" fill="none" stroke="#03050C" stroke-opacity=".9" stroke-width="3.60" stroke-linejoin="round"/>
+<path d="M5.00 3.00 L5.00 24.60 L10.10 19.90 L13.40 27.60 L16.90 26.10 L13.70 18.60 L20.60 18.60 Z" fill="url(#corpo)"/>
+<path d="M5.00 3.00 L5.00 24.60 L10.10 19.90 L13.40 27.60 L16.90 26.10 L13.70 18.60 L20.60 18.60 Z" fill="none" stroke="url(#borda)" stroke-width="1.7" stroke-linejoin="round"/>
+</svg>

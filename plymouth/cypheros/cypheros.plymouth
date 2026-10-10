@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=CypherOS
+Description=Boot animado do CypherOS (visual Prisma)
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/cypheros
+ScriptFile=/usr/share/plymouth/themes/cypheros/cypheros.script

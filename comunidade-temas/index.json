@@ -1,0 +1,93 @@
+{
+  "versao": 1,
+  "temas": [
+    {
+      "id": "neon-tokyo",
+      "name": "Neon Tóquio",
+      "author": "CypherOS",
+      "bg": "#0A0614",
+      "glass": "#160E26",
+      "accent": "#FF3EA5",
+      "accent2": "#00E5FF",
+      "hot": "#FFD23F",
+      "url": "temas/neon-tokyo.json"
+    },
+    {
+      "id": "floresta",
+      "name": "Floresta",
+      "author": "CypherOS",
+      "bg": "#06100C",
+      "glass": "#0E1C16",
+      "accent": "#4ADE80",
+      "accent2": "#2DD4BF",
+      "hot": "#FBBF24",
+      "url": "temas/floresta.json"
+    },
+    {
+      "id": "lavanda",
+      "name": "Lavanda",
+      "author": "CypherOS",
+      "bg": "#0E0A16",
+      "glass": "#1A1428",
+      "accent": "#C4B5FD",
+      "accent2": "#F0ABFC",
+      "hot": "#FDA4AF",
+      "url": "temas/lavanda.json"
+    },
+    {
+      "id": "sangue-real",
+      "name": "Rubi",
+      "author": "CypherOS",
+      "bg": "#120608",
+      "glass": "#200D12",
+      "accent": "#FB7185",
+      "accent2": "#F59E0B",
+      "hot": "#FDE047",
+      "url": "temas/sangue-real.json"
+    },
+    {
+      "id": "artico",
+      "name": "Ártico",
+      "author": "CypherOS",
+      "bg": "#071018",
+      "glass": "#0F1E2C",
+      "accent": "#7DD3FC",
+      "accent2": "#E0F2FE",
+      "hot": "#F9A8D4",
+      "url": "temas/artico.json"
+    },
+    {
+      "id": "dracula",
+      "name": "Drácula",
+      "author": "CypherOS",
+      "bg": "#14151F",
+      "glass": "#1E2030",
+      "accent": "#BD93F9",
+      "accent2": "#FF79C6",
+      "hot": "#FFB86C",
+      "url": "temas/dracula.json"
+    },
+    {
+      "id": "ouro",
+      "name": "Ouro",
+      "author": "CypherOS",
+      "bg": "#0E0B06",
+      "glass": "#1C160C",
+      "accent": "#FACC15",
+      "accent2": "#FB923C",
+      "hot": "#F472B6",
+      "url": "temas/ouro.json"
+    },
+    {
+      "id": "matrix",
+      "name": "Matrix",
+      "author": "CypherOS",
+      "bg": "#020804",
+      "glass": "#081410",
+      "accent": "#22FF88",
+      "accent2": "#00C853",
+      "hot": "#E6FF00",
+      "url": "temas/matrix.json"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Prisma: row-resize -->
+<defs>
+  <linearGradient id="borda" gradientUnits="userSpaceOnUse" x1="4" y1="3" x2="28" y2="29">
+    <stop offset="0" stop-color="#38E1FF"/><stop offset="1" stop-color="#A78BFA"/>
+  </linearGradient>
+  <linearGradient id="corpo" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="30">
+    <stop offset="0" stop-color="#151A31"/><stop offset="1" stop-color="#0B1020"/>
+  </linearGradient>
+  <filter id="brilho" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="1.1"/>
+  </filter>
+</defs>
+<path d="M16.00 3.00 L20.80 8.20 L17.40 8.20 L17.40 13.20 L26.00 13.20 L26.00 15.00 L6.00 15.00 L6.00 13.20 L14.60 13.20 L14.60 8.20 L11.20 8.20 Z M16.00 29.00 L20.80 23.80 L17.40 23.80 L17.40 18.80 L26.00 18.80 L26.00 17.00 L6.00 17.00 L6.00 18.80 L14.60 18.80 L14.60 23.80 L11.20 23.80 Z" fill="none" stroke="#38E1FF" stroke-opacity=".55" stroke-width="3.2" stroke-linejoin="round" filter="url(#brilho)"/>
+<path d="M16.00 3.00 L20.80 8.20 L17.40 8.20 L17.40 13.20 L26.00 13.20 L26.00 15.00 L6.00 15.00 L6.00 13.20 L14.60 13.20 L14.60 8.20 L11.20 8.20 Z M16.00 29.00 L20.80 23.80 L17.40 23.80 L17.40 18.80 L26.00 18.80 L26.00 17.00 L6.00 17.00 L6.00 18.80 L14.60 18.80 L14.60 23.80 L11.20 23.80 Z" fill="none" stroke="#03050C" stroke-opacity=".9" stroke-width="3.30" stroke-linejoin="round"/>
+<path d="M16.00 3.00 L20.80 8.20 L17.40 8.20 L17.40 13.20 L26.00 13.20 L26.00 15.00 L6.00 15.00 L6.00 13.20 L14.60 13.20 L14.60 8.20 L11.20 8.20 Z M16.00 29.00 L20.80 23.80 L17.40 23.80 L17.40 18.80 L26.00 18.80 L26.00 17.00 L6.00 17.00 L6.00 18.80 L14.60 18.80 L14.60 23.80 L11.20 23.80 Z" fill="url(#corpo)"/>
+<path d="M16.00 3.00 L20.80 8.20 L17.40 8.20 L17.40 13.20 L26.00 13.20 L26.00 15.00 L6.00 15.00 L6.00 13.20 L14.60 13.20 L14.60 8.20 L11.20 8.20 Z M16.00 29.00 L20.80 23.80 L17.40 23.80 L17.40 18.80 L26.00 18.80 L26.00 17.00 L6.00 17.00 L6.00 18.80 L14.60 18.80 L14.60 23.80 L11.20 23.80 Z" fill="none" stroke="url(#borda)" stroke-width="1.4" stroke-linejoin="round"/>
+</svg>

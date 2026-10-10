@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Prisma: nwse-resize -->
+<defs>
+  <linearGradient id="borda" gradientUnits="userSpaceOnUse" x1="4" y1="3" x2="28" y2="29">
+    <stop offset="0" stop-color="#38E1FF"/><stop offset="1" stop-color="#A78BFA"/>
+  </linearGradient>
+  <linearGradient id="corpo" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="30">
+    <stop offset="0" stop-color="#151A31"/><stop offset="1" stop-color="#0B1020"/>
+  </linearGradient>
+  <filter id="brilho" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="1.1"/>
+  </filter>
+</defs>
+<path d="M7.54 7.54 L15.22 7.93 L12.55 10.60 L21.40 19.45 L24.07 16.78 L24.46 24.46 L16.78 24.07 L19.45 21.40 L10.60 12.55 L7.93 15.22 Z" fill="none" stroke="#38E1FF" stroke-opacity=".55" stroke-width="3.2" stroke-linejoin="round" filter="url(#brilho)"/>
+<path d="M7.54 7.54 L15.22 7.93 L12.55 10.60 L21.40 19.45 L24.07 16.78 L24.46 24.46 L16.78 24.07 L19.45 21.40 L10.60 12.55 L7.93 15.22 Z" fill="none" stroke="#03050C" stroke-opacity=".9" stroke-width="3.40" stroke-linejoin="round"/>
+<path d="M7.54 7.54 L15.22 7.93 L12.55 10.60 L21.40 19.45 L24.07 16.78 L24.46 24.46 L16.78 24.07 L19.45 21.40 L10.60 12.55 L7.93 15.22 Z" fill="url(#corpo)"/>
+<path d="M7.54 7.54 L15.22 7.93 L12.55 10.60 L21.40 19.45 L24.07 16.78 L24.46 24.46 L16.78 24.07 L19.45 21.40 L10.60 12.55 L7.93 15.22 Z" fill="none" stroke="url(#borda)" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

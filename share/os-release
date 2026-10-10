@@ -1,0 +1,9 @@
+NAME="CypherOS"
+PRETTY_NAME="CypherOS 0.8 Gênese"
+ID=cypheros
+ID_LIKE=arch
+BUILD_ID=rolling
+VERSION_ID=0.8
+ANSI_COLOR="38;2;56;225;255"
+HOME_URL="https://github.com/sCypher-me"
+LOGO=archlinux-logo

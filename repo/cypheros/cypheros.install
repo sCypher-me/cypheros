@@ -1,0 +1,10 @@
+post_install() {
+    cp /usr/share/cypheros/os-release /usr/lib/os-release
+    fc-cache -f >/dev/null 2>&1
+    echo ">> CypherOS instalado. Para ligar a tela de login e o boot animado: sudo /usr/share/cypheros/ativar-login-e-boot.sh"
+    echo ">> Usuários que já existiam: rode 'cypher-aplicar-padrao' para receber as configurações do CypherOS."
+}
+post_upgrade() {
+    cp /usr/share/cypheros/os-release /usr/lib/os-release
+    fc-cache -f >/dev/null 2>&1
+}

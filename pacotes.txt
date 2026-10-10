@@ -1,0 +1,59 @@
+# Pacotes do CypherOS (repositórios oficiais do Arch)
+# desktop
+hyprland
+quickshell
+qt6-multimedia
+qt6-shadertools
+qt6-svg
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+polkit-gnome
+hypridle
+hyprsunset
+greetd
+plymouth
+# som, rede, energia
+pipewire
+pipewire-pulse
+wireplumber
+networkmanager
+network-manager-applet
+bluez
+bluez-utils
+brightnessctl
+upower
+playerctl
+# terminal
+foot
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting
+fastfetch
+jq
+# utilidades
+grim
+slurp
+wl-clipboard
+cliphist
+fd
+wtype
+wf-recorder
+satty
+hyprpicker
+cava
+kitty
+fzf
+pacman-contrib
+flatpak
+kdeconnect
+curl
+libnotify
+xdg-utils
+nautilus
+firefox
+# aparência
+ttf-jetbrains-mono
+noto-fonts
+noto-fonts-emoji
+papirus-icon-theme
+adw-gtk-theme

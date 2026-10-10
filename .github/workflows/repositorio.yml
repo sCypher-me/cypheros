@@ -1,0 +1,43 @@
+# Constrói os pacotes do CypherOS e publica o repositório [cypheros] no GitHub Pages.
+# Em Settings › Pages, escolha "GitHub Actions" como fonte e depois rode pela aba Actions.
+# Só roda quando você pede, para não dar erro enquanto o Pages não estiver ligado.
+name: Repositório de pacotes
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar o Arch
+        run: |
+          pacman -Syu --noconfirm --needed git
+          useradd -m construtor
+          chown -R construtor "$GITHUB_WORKSPACE"
+      - name: Construir pacotes
+        run: su construtor -c "cd '$GITHUB_WORKSPACE' && ./repo/construir.sh"
+      - name: Página do repositório
+        run: |
+          cp site/index.html saida/repo/index.html 2>/dev/null || true
+          cp -r site/* saida/repo/ 2>/dev/null || true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: saida/repo
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

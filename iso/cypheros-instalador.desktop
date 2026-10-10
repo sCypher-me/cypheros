@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Instalar o CypherOS
+Comment=Instala o CypherOS no seu computador, tudo pelo mouse
+Exec=cypher-app instalador
+Icon=cypheros
+Terminal=false
+Categories=System;
+Keywords=instalar;instalador;install;disco;sistema;

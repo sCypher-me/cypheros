@@ -1,0 +1,70 @@
+# CypherOS · boot animado (Prisma)
+
+Window.SetBackgroundTopColor(0.027, 0.039, 0.078);
+Window.SetBackgroundBottomColor(0.020, 0.027, 0.059);
+
+cx = Window.GetX() + Window.GetWidth() / 2;
+cy = Window.GetY() + Window.GetHeight() / 2 - 40;
+
+glow.image = Image("brilho.png");
+glow.sprite = Sprite(glow.image);
+glow.sprite.SetPosition(cx - glow.image.GetWidth() / 2, cy - glow.image.GetHeight() / 2, 0);
+
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetPosition(cx - logo.image.GetWidth() / 2, cy - logo.image.GetHeight() / 2, 1);
+logo.sprite.SetOpacity(0);
+
+name.image = Image.Text("C Y P H E R O S", 0.93, 0.95, 1.0, 1, "Sans 14");
+name.sprite = Sprite(name.image);
+name.sprite.SetPosition(cx - name.image.GetWidth() / 2, cy + 130, 1);
+name.sprite.SetOpacity(0);
+
+bar_bg.image = Image("barra-fundo.png");
+bar_bg.sprite = Sprite(bar_bg.image);
+bar_bg.sprite.SetPosition(cx - bar_bg.image.GetWidth() / 2, cy + 180, 1);
+
+bar.full = Image("barra.png");
+bar.sprite = Sprite();
+bar.sprite.SetPosition(cx - bar.full.GetWidth() / 2, cy + 180, 2);
+
+t = 0;
+fun refresh() {
+    t++;
+    # o logo aparece suave e o brilho pulsa atrás dele
+    if (t < 60) { logo.sprite.SetOpacity(t / 60); name.sprite.SetOpacity(t / 60); }
+    glow.sprite.SetOpacity(0.55 + 0.45 * Math.Sin(t / 22));
+}
+Plymouth.SetRefreshFunction(refresh);
+
+fun progress(duration, p) {
+    w = Math.Int(bar.full.GetWidth() * p);
+    if (w < 4) w = 4;
+    bar.sprite.SetImage(bar.full.Scale(w, bar.full.GetHeight()));
+}
+Plymouth.SetBootProgressFunction(progress);
+
+# senha de disco criptografado (se houver)
+prompt.sprite = Sprite();
+dots.sprite = Sprite();
+fun show_password(text, bullets) {
+    prompt.image = Image.Text(text, 0.66, 0.71, 0.81, 1, "Sans 12");
+    prompt.sprite.SetImage(prompt.image);
+    prompt.sprite.SetPosition(cx - prompt.image.GetWidth() / 2, cy + 220, 3);
+    s = "";
+    for (i = 0; i < bullets; i++) s += "• ";
+    dots.image = Image.Text(s, 0.22, 0.88, 1.0, 1, "Sans 18");
+    dots.sprite.SetImage(dots.image);
+    dots.sprite.SetPosition(cx - dots.image.GetWidth() / 2, cy + 250, 3);
+}
+fun hide_password() { prompt.sprite.SetOpacity(0); dots.sprite.SetOpacity(0); }
+Plymouth.SetDisplayPasswordFunction(show_password);
+Plymouth.SetDisplayNormalFunction(hide_password);
+
+msg.sprite = Sprite();
+fun message(text) {
+    msg.image = Image.Text(text, 0.66, 0.71, 0.81, 1, "Sans 11");
+    msg.sprite.SetImage(msg.image);
+    msg.sprite.SetPosition(cx - msg.image.GetWidth() / 2, Window.GetHeight() - 60, 3);
+}
+Plymouth.SetMessageFunction(message);

@@ -1,0 +1,13 @@
+{
+  "name": "Rubi",
+  "author": "CypherOS",
+  "bg": "#120608",
+  "glass": "#200D12",
+  "text": "#FFF0F2",
+  "muted": "#CFA6AE",
+  "accent": "#FB7185",
+  "accent2": "#F59E0B",
+  "hot": "#FDE047",
+  "ok": "#34D399",
+  "wallpaper": "aurora"
+}

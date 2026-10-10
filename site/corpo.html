@@ -1,0 +1,411 @@
+<title>CypherOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna central de 1120px; o topo é o próprio desktop Prisma ao vivo (aurora + grade), o resto é vidro sobre azul-noite. */
+:root {
+  --noite: #070A14;
+  --vidro: #101426;
+  --vidro-2: #161B33;
+  --texto: #EEF2FF;
+  --suave: #A9B4CF;
+  --ciano: #38E1FF;
+  --violeta: #A78BFA;
+  --rosa: #F472B6;
+  --verde: #34D399;
+  --linha: rgba(238, 242, 255, 0.10);
+  --f-titulo: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --raio: 18px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--noite);
+  color: var(--texto);
+  font-family: var(--f-texto);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--ciano); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--ciano); outline-offset: 3px; border-radius: 8px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, 4vw); }
+h1, h2, h3 { font-family: var(--f-titulo); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 600; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+.rotulo { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ciano); }
+.grad { background: linear-gradient(100deg, #fff 0%, var(--ciano) 45%, var(--violeta) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* topo */
+.topo { position: relative; overflow: hidden; border-bottom: 1px solid var(--linha); }
+#ceu { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.topo-conteudo { position: relative; padding-block: clamp(56px, 9vw, 112px) clamp(48px, 7vw, 88px); display: grid; gap: 28px; }
+.barra {
+  position: relative; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 16px; padding: 10px 16px; border-radius: 14px;
+  background: rgba(16, 20, 38, 0.62); border: 1px solid var(--linha); backdrop-filter: blur(14px);
+  font-family: var(--f-titulo); font-size: 0.95rem;
+}
+.barra .marca { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.barra nav { display: flex; gap: 18px; flex-wrap: wrap; margin-left: auto; }
+.barra nav a { color: var(--suave); text-decoration: none; }
+.barra nav a:hover { color: var(--texto); }
+.titulo { font-size: clamp(3.2rem, 11vw, 7.5rem); font-weight: 300; line-height: 0.95; letter-spacing: -0.04em; }
+.sub { max-width: 34em; font-size: clamp(1.05rem, 1.8vw, 1.25rem); color: var(--suave); }
+.acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.botao {
+  display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px;
+  font-family: var(--f-titulo); font-weight: 600; text-decoration: none; border: 0; cursor: pointer; font-size: 1rem;
+}
+.botao.cheio { background: linear-gradient(90deg, var(--ciano), var(--violeta)); color: #04121A; box-shadow: 0 0 28px rgba(56, 225, 255, 0.35); }
+.botao.vazio { background: rgba(255, 255, 255, 0.06); color: var(--texto); border: 1px solid var(--linha); }
+.versao { font-family: var(--f-mono); font-size: 0.85rem; color: var(--suave); }
+.versao b { color: var(--texto); font-weight: 500; }
+
+/* comando de instalação */
+.comando {
+  display: flex; align-items: center; gap: 12px; max-width: 640px; min-width: 0;
+  padding: 12px 12px 12px 18px; border-radius: 14px;
+  background: rgba(7, 10, 20, 0.7); border: 1px solid var(--linha);
+  font-family: var(--f-mono); font-size: 0.9rem;
+}
+.comando code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: var(--texto); }
+.comando code::before { content: "$ "; color: var(--ciano); }
+.copiar { flex: none; font: 500 0.8rem var(--f-mono); color: var(--suave); background: rgba(255,255,255,0.06); border: 1px solid var(--linha); border-radius: 9px; padding: 6px 10px; cursor: pointer; }
+.copiar:hover { color: var(--texto); }
+
+/* seções */
+section { padding-block: clamp(56px, 8vw, 96px); }
+.cabeca { display: grid; gap: 10px; margin-bottom: 36px; max-width: 46em; }
+.cabeca p { color: var(--suave); }
+
+.recursos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.grupo {
+  padding: 22px; border-radius: var(--raio);
+  background: linear-gradient(180deg, rgba(22, 27, 51, 0.7), rgba(16, 20, 38, 0.5));
+  border: 1px solid var(--linha); display: grid; gap: 14px; align-content: start;
+}
+.grupo .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(56, 225, 255, 0.10); }
+.grupo ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--suave); font-size: 0.95rem; }
+.grupo li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; }
+.grupo li::before { content: ""; width: 6px; height: 6px; margin-top: 0.62em; border-radius: 50%; background: var(--violeta); }
+.grupo li b { color: var(--texto); font-weight: 600; }
+
+/* wallpapers */
+.galeria { display: grid; grid-template-columns: 2fr 1fr 1fr; grid-auto-rows: minmax(140px, auto); gap: 12px; }
+.galeria figure { margin: 0; position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--linha); background: var(--vidro); min-height: 140px; }
+.galeria figure:first-child { grid-row: span 2; }
+.galeria img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(.2,.8,.2,1); }
+.galeria figure:hover img { transform: scale(1.04); }
+.galeria figcaption { position: absolute; left: 12px; bottom: 10px; font-family: var(--f-titulo); font-weight: 600; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+.galeria figcaption span { display: block; font: 400 0.78rem var(--f-texto); color: var(--suave); }
+.nota { margin-top: 16px; color: var(--suave); font-size: 0.92rem; }
+
+/* atalhos */
+.atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 32px; }
+.atalho { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--linha); }
+.atalho span { color: var(--suave); }
+.teclas { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+kbd { font: 500 0.78rem var(--f-mono); padding: 4px 8px; border-radius: 7px; background: var(--vidro-2); border: 1px solid var(--linha); border-bottom-width: 2px; color: var(--texto); white-space: nowrap; }
+
+/* instalar */
+.caminhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.caminho { padding: 24px; border-radius: var(--raio); border: 1px solid var(--linha); background: rgba(16, 20, 38, 0.6); display: grid; gap: 16px; align-content: start; min-width: 0; }
+.caminho.destaque { border-color: rgba(56, 225, 255, 0.4); box-shadow: 0 0 0 1px rgba(56, 225, 255, 0.1), 0 20px 60px -30px rgba(56, 225, 255, 0.5); }
+.caminho ol { margin: 0; padding: 0; list-style: none; counter-reset: passo; display: grid; gap: 14px; }
+.caminho li { counter-increment: passo; display: grid; grid-template-columns: 28px 1fr; gap: 12px; min-width: 0; }
+.caminho li::before { content: counter(passo); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 0.8rem var(--f-mono); color: #04121A; background: linear-gradient(135deg, var(--ciano), var(--violeta)); }
+.caminho li > div { min-width: 0; display: grid; gap: 6px; }
+.caminho pre { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--noite); border: 1px solid var(--linha); overflow-x: auto; font: 0.82rem/1.5 var(--f-mono); color: var(--texto); }
+.req { color: var(--suave); font-size: 0.9rem; }
+
+/* comunidade */
+.temas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 720px) { .temas { grid-template-columns: repeat(2, 1fr); } }
+.tema { border-radius: 14px; padding: 14px; min-height: 108px; display: grid; align-content: space-between; border: 1px solid var(--linha); position: relative; overflow: hidden; }
+.tema .cores { display: flex; gap: 6px; }
+.tema .cores i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+.tema b { font-family: var(--f-titulo); font-weight: 600; position: relative; }
+
+footer { border-top: 1px solid var(--linha); padding-block: 32px; color: var(--suave); font-size: 0.9rem; }
+footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+
+@media (max-width: 720px) {
+  .galeria { grid-template-columns: 1fr 1fr; }
+  .galeria figure:first-child { grid-column: span 2; grid-row: auto; aspect-ratio: 16 / 10; }
+  .barra nav { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .galeria img { transition: none; } }
+</style>
+
+<header class="topo">
+  <canvas id="ceu" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="barra">
+      <span class="marca">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38E1FF"/><stop offset="1" stop-color="#A78BFA"/></linearGradient></defs><path d="M12 2l9 5v10l-9 5-9-5V7zM12 7.5l4.5 2.5v4.5L12 17l-4.5-2.5V10z"/></svg>
+        cypher
+      </span>
+      <nav aria-label="Seções">
+        <a href="#recursos">Recursos</a>
+        <a href="#wallpapers">Wallpapers</a>
+        <a href="#atalhos">Atalhos</a>
+        <a href="#instalar">Instalar</a>
+        <a href="#temas">Temas</a>
+      </nav>
+    </div>
+    <div class="topo-conteudo">
+      <span class="rotulo">Baseado no Arch Linux · desktop feito do zero</span>
+      <h1 class="titulo"><span class="grad">CypherOS</span></h1>
+      <p class="sub">Um sistema com cara própria. Vidro escuro, luz ciano e violeta, wallpapers que rodam na placa de vídeo e dançam com a música, e apps pensados para ele. Por baixo, a força e os pacotes do Arch.</p>
+      <div class="acoes">
+        <a class="botao cheio" href="#instalar">Instalar o CypherOS</a>
+        <a class="botao vazio" href="https://github.com/sCypher-me/cypheros">Código no GitHub</a>
+        <span class="versao">versão <b>0.8 Gênese</b></span>
+      </div>
+      <div class="comando">
+        <code id="cmd-repo">sudo pacman -S cypheros</code>
+        <button class="copiar" type="button" data-copiar="cmd-repo">copiar</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="recursos">
+    <div class="wrap">
+      <div class="cabeca">
+        <span class="rotulo">O que vem dentro</span>
+        <h2>Tudo que você vê foi desenhado para o CypherOS</h2>
+        <p>Do Arch ficam o kernel, o pacman e o systemd. A barra, o lançador, as notificações, a tela de login, o terminal e os apps são próprios, no mesmo visual.</p>
+      </div>
+      <div class="recursos">
+        <article class="grupo">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38E1FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></div>
+          <h3>Desktop</h3>
+          <ul>
+            <li><span><b>Lançador</b> que acha apps, arquivos, comandos antigos e faz contas</span></li>
+            <li><span><b>Visão geral</b> das janelas com miniaturas ao vivo</span></li>
+            <li><span>Calendário, agenda, clima, notas e <b>modo foco</b> com Pomodoro</span></li>
+            <li><span>Histórico do que você copiou e seletor de emojis em português</span></li>
+          </ul>
+        </article>
+        <article class="grupo">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></div>
+          <h3>Apps próprios</h3>
+          <ul>
+            <li><span><b>Central CypherOS</b>: todas as configurações num lugar, com busca</span></li>
+            <li><span><b>Loja Cypher</b>: Arch, AUR e Flatpak numa busca só</span></li>
+            <li><span><b>Monitor do sistema</b> com gráficos ao vivo</span></li>
+            <li><span><b>Cypher Term</b>: abas, divisões e fundo de vidro</span></li>
+          </ul>
+        </article>
+        <article class="grupo">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/></svg></div>
+          <h3>Segurança</h3>
+          <ul>
+            <li><span><b>Pontos de restauração</b> antes de cada atualização (btrfs e snapper)</span></li>
+            <li><span>Atualizador na barra para Arch, AUR e Flatpak</span></li>
+            <li><span><b>Backup</b> das configurações e da lista de apps</span></li>
+            <li><span>Um comando para voltar no tempo: <code>cypher restaurar</code></span></li>
+          </ul>
+        </article>
+        <article class="grupo">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></div>
+          <h3>Do seu jeito</h3>
+          <ul>
+            <li><span>Temas, cores, vidro e letras que mudam na hora</span></li>
+            <li><span><b>Loja de temas</b> da comunidade e tema por horário</span></li>
+            <li><span>Assistente de <b>IA</b> no lançador e o celular conectado</span></li>
+            <li><span>Cursor e ícones Prisma, sons do sistema próprios</span></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="wallpapers">
+    <div class="wrap">
+      <div class="cabeca">
+        <span class="rotulo">Wallpapers animados</span>
+        <h2>Fundos que rodam na placa de vídeo</h2>
+        <p>Cinco cenas escritas como shaders. Elas seguem as cores do tema e, quando uma música toca, pulsam com o grave.</p>
+      </div>
+      <div class="galeria">
+        <figure><img src="img/wallpaper-aurora.jpg" alt="Wallpaper Aurora: luzes ciano e violeta sobre uma grade no horizonte" loading="lazy"><figcaption>Aurora<span>o padrão</span></figcaption></figure>
+        <figure><img src="img/wallpaper-pulso.jpg" alt="Wallpaper Pulso: anel de luz que vira equalizador" loading="lazy"><figcaption>Pulso<span>equalizador</span></figcaption></figure>
+        <figure><img src="img/wallpaper-nebulosa.jpg" alt="Wallpaper Nebulosa" loading="lazy"><figcaption>Nebulosa</figcaption></figure>
+        <figure><img src="img/wallpaper-ondas.jpg" alt="Wallpaper Ondas" loading="lazy"><figcaption>Ondas</figcaption></figure>
+        <figure><img src="img/wallpaper-particulas.jpg" alt="Wallpaper Partículas" loading="lazy"><figcaption>Partículas</figcaption></figure>
+      </div>
+      <p class="nota">Também aceita imagem ou vídeo seu: <code>cypher wallpaper video ~/Vídeos/fundo.mp4</code></p>
+    </div>
+  </section>
+
+  <section id="atalhos">
+    <div class="wrap">
+      <div class="cabeca">
+        <span class="rotulo">Atalhos</span>
+        <h2>Feito para o teclado</h2>
+        <p>A tecla SUPER (a do logo) abre quase tudo.</p>
+      </div>
+      <div class="atalhos">
+        <div class="atalho"><span>Lançador e busca</span><span class="teclas"><kbd>SUPER</kbd><kbd>ESPAÇO</kbd></span></div>
+        <div class="atalho"><span>Visão geral das janelas</span><span class="teclas"><kbd>SUPER</kbd><kbd>TAB</kbd></span></div>
+        <div class="atalho"><span>Assistente de IA</span><span class="teclas"><kbd>SUPER</kbd><kbd>A</kbd></span></div>
+        <div class="atalho"><span>Área de transferência</span><span class="teclas"><kbd>SUPER</kbd><kbd>V</kbd></span></div>
+        <div class="atalho"><span>Central CypherOS</span><span class="teclas"><kbd>SUPER</kbd><kbd>I</kbd></span></div>
+        <div class="atalho"><span>Cypher Term</span><span class="teclas"><kbd>SUPER</kbd><kbd>ENTER</kbd></span></div>
+        <div class="atalho"><span>Captura e gravação de tela</span><span class="teclas"><kbd>SUPER</kbd><kbd>PRINT</kbd></span></div>
+        <div class="atalho"><span>Modo foco</span><span class="teclas"><kbd>SUPER</kbd><kbd>SHIFT</kbd><kbd>F</kbd></span></div>
+        <div class="atalho"><span>Calendário e agenda</span><span class="teclas"><kbd>SUPER</kbd><kbd>C</kbd></span></div>
+        <div class="atalho"><span>Monitor do sistema</span><span class="teclas"><kbd>CTRL</kbd><kbd>SHIFT</kbd><kbd>ESC</kbd></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="instalar">
+    <div class="wrap">
+      <div class="cabeca">
+        <span class="rotulo">Instalar</span>
+        <h2>Dois caminhos</h2>
+        <p>Instale do zero pela ISO, com pontos de restauração já ligados, ou transforme o Arch que você já usa.</p>
+      </div>
+      <div class="caminhos">
+        <article class="caminho destaque">
+          <h3>Pelo pendrive (instalação nova)</h3>
+          <ol>
+            <li><div><span>Grave a ISO no pendrive. Troque <code>sdX</code> pelo seu pendrive (confira com <code>lsblk</code>).</span><pre>sudo dd if=cypheros-x86_64.iso of=/dev/sdX bs=4M status=progress oflag=sync</pre></div></li>
+            <li><div><span>Dê boot pelo pendrive. O CypherOS abre ao vivo (usuário e senha <code>cypher</code>).</span></div></li>
+            <li><div><span>O instalador gráfico abre sozinho. Escolha idioma, Wi-Fi, disco e sua conta, tudo com o mouse. Dá para instalar ao lado do Windows e criptografar o disco.</span></div></li>
+          </ol>
+          <p class="req">Precisa de computador com UEFI e internet durante a instalação.</p>
+        </article>
+        <article class="caminho">
+          <h3>No Arch que você já usa</h3>
+          <ol>
+            <li><div><span>Ligue o repositório do CypherOS.</span><pre>sudo ./repo/ativar-repositorio.sh</pre></div></li>
+            <li><div><span>Instale o pacote.</span><pre>sudo pacman -S cypheros</pre></div></li>
+            <li><div><span>Receba as configurações do CypherOS (as suas ficam num backup) e entre de novo no Hyprland.</span><pre>cypher-aplicar-padrao</pre></div></li>
+          </ol>
+          <p class="req">Pontos de restauração precisam do disco em btrfs. O resto funciona em qualquer Arch.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="temas">
+    <div class="wrap">
+      <div class="cabeca">
+        <span class="rotulo">Comunidade</span>
+        <h2>Loja de temas</h2>
+        <p>Instale temas feitos por outras pessoas com um clique na Central, ou exporte o seu visual e mande para a loja.</p>
+      </div>
+      <div class="temas" id="lista-temas"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>CypherOS 0.8 "Gênese" · feito por Julio Cesar</span>
+    <span>Não é um produto oficial do Arch Linux.</span>
+  </div>
+</footer>
+
+<script>
+// temas da loja (os mesmos que vêm no sistema)
+const temas = [
+  ["Prisma", "#070A14", "#38E1FF", "#A78BFA", "#F472B6"],
+  ["Neon Tóquio", "#0A0614", "#FF3EA5", "#00E5FF", "#FFD23F"],
+  ["Floresta", "#06100C", "#4ADE80", "#2DD4BF", "#FBBF24"],
+  ["Lavanda", "#0E0A16", "#C4B5FD", "#F0ABFC", "#FDA4AF"],
+  ["Ártico", "#071018", "#7DD3FC", "#E0F2FE", "#F9A8D4"],
+  ["Rubi", "#120608", "#FB7185", "#F59E0B", "#FDE047"],
+  ["Ouro", "#0E0B06", "#FACC15", "#FB923C", "#F472B6"],
+  ["Matrix", "#020804", "#22FF88", "#00C853", "#E6FF00"]
+];
+const lista = document.getElementById("lista-temas");
+for (const [nome, bg, a, b, c] of temas) {
+  const el = document.createElement("div");
+  el.className = "tema";
+  el.style.background = `radial-gradient(120% 90% at 0% 0%, ${a}40, transparent 60%), radial-gradient(90% 80% at 100% 0%, ${b}38, transparent 60%), ${bg}`;
+  el.innerHTML = `<span class="cores"><i style="background:${a}"></i><i style="background:${b}"></i><i style="background:${c}"></i></span><b>${nome}</b>`;
+  lista.appendChild(el);
+}
+
+// copiar comando
+document.querySelectorAll("[data-copiar]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const alvo = document.getElementById(btn.dataset.copiar);
+    const texto = alvo.textContent;
+    const ok = () => { btn.textContent = "copiado"; setTimeout(() => btn.textContent = "copiar", 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(alvo); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "selecionado"; };
+    try { navigator.clipboard.writeText(texto).then(ok, fallback); } catch (e) { fallback(); }
+  });
+});
+
+// céu do topo: a mesma aurora com grade do wallpaper padrão, em canvas 2D
+(() => {
+  const cv = document.getElementById("ceu");
+  const ctx = cv.getContext("2d");
+  const parado = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w = 0, h = 0, dpr = 1;
+  const estrelas = Array.from({ length: 90 }, () => [Math.random(), Math.random() * 0.6, Math.random() * 6.28]);
+  function tamanho() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    w = cv.clientWidth; h = cv.clientHeight;
+    cv.width = w * dpr; cv.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function mancha(x, y, r, cor, a) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, cor + Math.round(a * 255).toString(16).padStart(2, "0"));
+    g.addColorStop(1, cor + "00");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  }
+  function quadro(ms) {
+    const t = ms / 1000;
+    ctx.fillStyle = "#070A14"; ctx.fillRect(0, 0, w, h);
+    mancha(w * (0.15 + Math.sin(t * 0.08) * 0.08), h * (-0.05 + Math.cos(t * 0.06) * 0.05), Math.max(w, h) * 0.55, "#38E1FF", 0.30);
+    mancha(w * (0.9 + Math.cos(t * 0.05) * 0.06), h * (0.25 + Math.sin(t * 0.07) * 0.08), Math.max(w, h) * 0.55, "#A78BFA", 0.32);
+    mancha(w * (0.5 + Math.sin(t * 0.04) * 0.12), h * 1.1, Math.max(w, h) * 0.4, "#F472B6", 0.14);
+    for (const [x, y, f] of estrelas) {
+      ctx.fillStyle = `rgba(255,255,255,${0.15 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.2 + f))})`;
+      ctx.fillRect(x * w, y * h, 1.4, 1.4);
+    }
+    // grade em perspectiva abaixo do horizonte
+    const hor = h * 0.78;
+    const linha = ctx.createLinearGradient(0, 0, w, 0);
+    linha.addColorStop(0, "rgba(56,225,255,0)"); linha.addColorStop(0.2, "rgba(56,225,255,0.9)");
+    linha.addColorStop(0.8, "rgba(167,139,250,0.9)"); linha.addColorStop(1, "rgba(167,139,250,0)");
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, hor, w, h - hor); ctx.clip();
+    ctx.strokeStyle = "rgba(56,225,255,0.16)"; ctx.lineWidth = 1;
+    const off = (t * 0.25) % 1;
+    for (let i = 0; i < 14; i++) {
+      const z = (i + 1 - off) / 14;
+      const y = hor + (h - hor) * z * z;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let i = -16; i <= 16; i++) {
+      ctx.beginPath(); ctx.moveTo(w / 2 + i * 14, hor); ctx.lineTo(w / 2 + i * w * 0.16, h); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.fillStyle = linha; ctx.fillRect(0, hor - 1, w, 2);
+    ctx.globalAlpha = 0.35; ctx.fillRect(0, hor - 6, w, 12); ctx.globalAlpha = 1;
+    // escurece embaixo para o texto respirar
+    const fim = ctx.createLinearGradient(0, h * 0.55, 0, h);
+    fim.addColorStop(0, "rgba(7,10,20,0)"); fim.addColorStop(1, "rgba(7,10,20,0.75)");
+    ctx.fillStyle = fim; ctx.fillRect(0, 0, w, h);
+    if (!parado) requestAnimationFrame(quadro);
+  }
+  tamanho();
+  addEventListener("resize", tamanho);
+  requestAnimationFrame(quadro);
+})();
+</script>

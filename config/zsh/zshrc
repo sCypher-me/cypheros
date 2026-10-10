@@ -1,0 +1,30 @@
+# CypherOS · zsh
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt share_history hist_ignore_dups autocd interactive_comments
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+bindkey -e
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+
+[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#3A4466'
+
+# Prompt Prisma: usuário@cypher · pasta · branch git · ❯ (rosa se o último comando falhou)
+autoload -Uz vcs_info
+precmd() { vcs_info }
+zstyle ':vcs_info:git:*' formats ' %F{#A78BFA} %b%f'
+setopt prompt_subst
+PROMPT='%F{#38E1FF}%n@cypher%f %F{#A9B4CF}%~%f${vcs_info_msg_0_}
+%(?.%F{#38E1FF}.%F{#F472B6})❯%f '
+
+alias ls='ls --color=auto'
+alias ll='ls -lah --color=auto'
+alias grep='grep --color=auto'
+
+# boas-vindas só no primeiro terminal
+[ -z "$CYPHER_WELCOMED" ] && command -v fastfetch >/dev/null && { export CYPHER_WELCOMED=1; fastfetch; }

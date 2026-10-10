@@ -1,0 +1,13 @@
+{
+  "name": "Matrix",
+  "author": "CypherOS",
+  "bg": "#020804",
+  "glass": "#081410",
+  "text": "#DCFFE6",
+  "muted": "#86B898",
+  "accent": "#22FF88",
+  "accent2": "#00C853",
+  "hot": "#E6FF00",
+  "ok": "#69F0AE",
+  "wallpaper": "particulas"
+}

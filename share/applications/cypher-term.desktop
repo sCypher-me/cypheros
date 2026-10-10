@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Cypher Term
+GenericName=Terminal
+Comment=O terminal do CypherOS, com abas, divisões e vidro
+Exec=cypher-term
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=terminal;shell;console;linha de comando;
+StartupWMClass=cypher-term

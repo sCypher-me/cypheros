@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Monitor do sistema
+Comment=Uso de CPU, memória, rede, disco e processos
+Exec=cypher-app monitor
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;
+Keywords=monitor;processos;cpu;memória;gerenciador de tarefas;

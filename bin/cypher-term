@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Cypher Term: o terminal do CypherOS. Aceita -e comando (como outros terminais).
+[ "${1:-}" = "-e" ] && shift
+exec kitty --class cypher-term --title "Cypher Term" --config /usr/share/cypheros/term/kitty.conf "$@"

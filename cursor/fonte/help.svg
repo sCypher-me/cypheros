@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Prisma: help -->
+<defs>
+  <linearGradient id="borda" gradientUnits="userSpaceOnUse" x1="4" y1="3" x2="28" y2="29">
+    <stop offset="0" stop-color="#38E1FF"/><stop offset="1" stop-color="#A78BFA"/>
+  </linearGradient>
+  <linearGradient id="corpo" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="30">
+    <stop offset="0" stop-color="#151A31"/><stop offset="1" stop-color="#0B1020"/>
+  </linearGradient>
+  <filter id="brilho" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="1.1"/>
+  </filter>
+</defs>
+<path d="M5.00 3.00 L5.00 21.50 L9.10 17.80 L11.80 24.00 L14.60 22.80 L12.00 16.80 L17.60 16.80 Z" fill="none" stroke="#38E1FF" stroke-opacity=".55" stroke-width="3.2" stroke-linejoin="round" filter="url(#brilho)"/>
+<path d="M5.00 3.00 L5.00 21.50 L9.10 17.80 L11.80 24.00 L14.60 22.80 L12.00 16.80 L17.60 16.80 Z" fill="none" stroke="#03050C" stroke-opacity=".9" stroke-width="3.60" stroke-linejoin="round"/>
+<path d="M5.00 3.00 L5.00 21.50 L9.10 17.80 L11.80 24.00 L14.60 22.80 L12.00 16.80 L17.60 16.80 Z" fill="url(#corpo)"/>
+<path d="M5.00 3.00 L5.00 21.50 L9.10 17.80 L11.80 24.00 L14.60 22.80 L12.00 16.80 L17.60 16.80 Z" fill="none" stroke="url(#borda)" stroke-width="1.7" stroke-linejoin="round"/>
+<path d="M16.80 23.00 A6.2 6.2 0 1 1 29.20 23.00 A6.2 6.2 0 1 1 16.80 23.00 Z" fill="none" stroke="#38E1FF" stroke-opacity=".55" stroke-width="3.2" stroke-linejoin="round" filter="url(#brilho)"/>
+<path d="M16.80 23.00 A6.2 6.2 0 1 1 29.20 23.00 A6.2 6.2 0 1 1 16.80 23.00 Z" fill="none" stroke="#03050C" stroke-opacity=".9" stroke-width="3.40" stroke-linejoin="round"/>
+<path d="M16.80 23.00 A6.2 6.2 0 1 1 29.20 23.00 A6.2 6.2 0 1 1 16.80 23.00 Z" fill="url(#corpo)"/>
+<path d="M16.80 23.00 A6.2 6.2 0 1 1 29.20 23.00 A6.2 6.2 0 1 1 16.80 23.00 Z" fill="none" stroke="url(#borda)" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M20.8 21.4 C20.8 19.9 21.8 19 23.1 19 C24.4 19 25.3 19.9 25.3 21 C25.3 22.5 23.1 22.6 23.1 24.2" fill="none" stroke="url(#borda)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="1.0"/>
+<circle cx="23.1" cy="26.4" r="1" fill="url(#borda)"/>
+</svg>

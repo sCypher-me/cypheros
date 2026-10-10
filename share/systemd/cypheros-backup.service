@@ -1,0 +1,6 @@
+[Unit]
+Description=Backup das configurações do CypherOS
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cypher backup

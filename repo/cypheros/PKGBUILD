@@ -1,0 +1,42 @@
+# Pacotes do CypherOS para o repositório próprio [cypheros].
+# Construa com: ../construir.sh  (usa os arquivos desta pasta do projeto, não baixa nada)
+
+_raiz="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+pkgbase=cypheros
+pkgname=(cypheros cypheros-cursor cypheros-icones)
+pkgver=0.8
+pkgrel=1
+pkgdesc="CypherOS: desktop próprio sobre o Arch Linux (shell, apps, terminal, temas)"
+arch=(any)
+url="https://github.com/sCypher-me/cypheros"
+license=(MIT)
+
+pkgver() { sed -n 's/^VERSION_ID=//p' "$_raiz/share/os-release"; }
+
+package_cypheros() {
+    mapfile -t _deps < <(grep -v -e '^#' -e '^$' "$_raiz/pacotes.txt")
+    depends=("${_deps[@]}" cypheros-cursor cypheros-icones)
+    optdepends=('snapper: pontos de restauração (precisa de btrfs)'
+                'snap-pac: snapshot automático antes de atualizar'
+                'ollama: assistente de IA local, sem internet'
+                'paru: apps do AUR pela Loja Cypher')
+    install=cypheros.install
+    CYPHER_PACOTE=1 "$_raiz/instalar-arquivos.sh" "$pkgdir"
+}
+
+package_cypheros-cursor() {
+    pkgdesc="Cursor Prisma do CypherOS"
+    install -d "$pkgdir/usr/share/icons"
+    cp -r "$_raiz/cursor/Prisma" "$pkgdir/usr/share/icons/Prisma-cursor"
+    while read -r alias alvo; do
+        [ -n "$alias" ] && [ "${alias#\#}" = "$alias" ] && ln -sf "$alvo" "$pkgdir/usr/share/icons/Prisma-cursor/cursors/$alias"
+    done < "$_raiz/cursor/aliases.txt"
+}
+
+package_cypheros-icones() {
+    pkgdesc="Ícones Prisma do CypherOS (completa com o Papirus)"
+    depends=(papirus-icon-theme)
+    install -d "$pkgdir/usr/share/icons"
+    cp -r "$_raiz/icones/Prisma" "$pkgdir/usr/share/icons/Prisma"
+}

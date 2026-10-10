@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Loja Cypher
+Comment=Instale apps do Arch, do AUR e do Flatpak
+Exec=cypher-app loja
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+Keywords=loja;apps;instalar;programas;pacotes;aur;flatpak;atualizar;

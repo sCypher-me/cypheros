@@ -1,0 +1,18 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": { "source": "/usr/share/cypheros/logo.txt", "color": { "1": "38;2;56;225;255", "2": "38;2;167;139;250" }, "padding": { "right": 3 } },
+  "display": { "separator": "  ", "color": { "keys": "38;2;56;225;255" } },
+  "modules": [
+    { "type": "title", "format": "{user-name}@cypher" },
+    { "type": "custom", "key": "sistema ", "format": "CypherOS 0.2 \"Gênese\"" },
+    { "type": "kernel", "key": "kernel  " },
+    { "type": "wm", "key": "janelas " },
+    { "type": "custom", "key": "shell   ", "format": "cypher-shell (Prisma)" },
+    { "type": "terminal", "key": "terminal" },
+    { "type": "memory", "key": "memória " },
+    { "type": "disk", "key": "disco   ", "folders": "/" },
+    { "type": "uptime", "key": "ligado  " },
+    "break",
+    { "type": "colors", "symbol": "circle" }
+  ]
+}

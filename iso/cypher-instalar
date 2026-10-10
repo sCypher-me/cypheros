@@ -1,0 +1,413 @@
+#!/usr/bin/env bash
+# cypher-instalar: motor de instalação do CypherOS (roda a partir da ISO).
+#
+#   cypher-instalar                  modo texto, com perguntas no terminal (reserva para quem preferir)
+#   cypher-instalar --checar         JSON: UEFI, internet, memória, fuso provável (usado pelo instalador gráfico)
+#   cypher-instalar --discos         JSON: discos, partições e espaço livre
+#   cypher-instalar --config <arq>   instala sem perguntas, lendo um JSON (o arquivo é apagado ao ler)
+#
+# No modo --config o progresso sai em linhas que o instalador gráfico entende:
+#   @etapa <id> <texto>   @progresso <0-100>   @fim   @erro <texto>
+# Qualquer outra linha é registro (aparece em "Mostrar detalhes" e em /tmp/cypher-instalar.log).
+set -Eeuo pipefail
+
+SRC=/usr/share/cypheros/src
+VERSAO=0.8
+LOG=/tmp/cypher-instalar.log
+MIN_GB=20
+GUI=0
+
+C=$'\e[38;2;56;225;255m'; V=$'\e[38;2;167;139;250m'; P=$'\e[38;2;244;114;182m'; M=$'\e[38;2;169;180;207m'; R=$'\e[0m'
+
+etapa() { if [ "$GUI" = 1 ]; then echo "@etapa $1 $2"; else echo; echo "${C}◆${R} $2"; fi; }
+progresso() { [ "$GUI" = 1 ] && echo "@progresso $1" || true; }
+erro() {
+    if [ "$GUI" = 1 ]; then echo "@erro $*"; else echo "${P}✖ $*${R}" >&2; fi
+    limpar
+    exit 1
+}
+limpar() {
+    umount -R /mnt 2>/dev/null || true
+    [ -e /dev/mapper/cryptroot ] && cryptsetup close cryptroot 2>/dev/null || true
+}
+falhou() {
+    trap - ERR
+    erro "Algo deu errado no passo \"${ETAPA_ATUAL:-preparação}\" (linha $1: $2). Nenhum dado fora do disco escolhido foi tocado."
+}
+trap 'falhou $LINENO "$BASH_COMMAND"' ERR
+
+eh_uefi() { [ -d /sys/firmware/efi ]; }
+tem_internet() { curl -fsI --max-time 6 https://archlinux.org >/dev/null 2>&1 || ping -c1 -W3 archlinux.org >/dev/null 2>&1; }
+
+# ---------------------------------------------------------------- consultas
+
+checar() {
+    local ram fuso
+    ram=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo)
+    fuso=$(curl -fsS --max-time 4 'http://ip-api.com/line/?fields=timezone' 2>/dev/null || true)
+    [ -f "/usr/share/zoneinfo/$fuso" ] || fuso="America/Sao_Paulo"
+    jq -n --argjson uefi "$(eh_uefi && echo true || echo false)" \
+          --argjson internet "$(tem_internet && echo true || echo false)" \
+          --argjson ram "$ram" --arg fuso "$fuso" --arg versao "$VERSAO" \
+          --argjson bateria "$(grep -qs Discharging /sys/class/power_supply/BAT*/status && echo true || echo false)" \
+          '{uefi: $uefi, internet: $internet, ramMiB: $ram, fuso: $fuso, versao: $versao, naBateria: $bateria}'
+}
+
+# disco do próprio pendrive da ISO (não pode aparecer na lista)
+disco_da_iso() {
+    local src
+    src=$(findmnt -no SOURCE /run/archiso/bootmnt 2>/dev/null || true)
+    if [ -n "$src" ]; then lsblk -no PKNAME "$src" 2>/dev/null | head -1; fi
+}
+
+# maior bloco livre de um disco GPT, em bytes
+livre_bytes() {
+    local d=$1 ss ini fim
+    ss=$(blockdev --getss "$d")
+    ini=$(sgdisk -F "$d" 2>/dev/null | tail -1)
+    fim=$(sgdisk -E "$d" 2>/dev/null | tail -1)
+    [[ "$ini" =~ ^[0-9]+$ && "$fim" =~ ^[0-9]+$ && "$fim" -gt "$ini" ]] || { echo 0; return; }
+    echo $(( (fim - ini + 1) * ss ))
+}
+
+discos() {
+    local iso json out="[]"
+    iso=$(disco_da_iso)
+    json=$(lsblk -J -b -o NAME,PATH,SIZE,MODEL,TYPE,TRAN,RM,PTTYPE,FSTYPE,LABEL,PARTTYPE,PARTLABEL)
+    while read -r nome; do
+        [ -n "$nome" ] || continue
+        [ "$nome" = "$iso" ] && continue
+        local d="/dev/$nome" livre pt
+        pt=$(lsblk -dno PTTYPE "$d" | tr -d ' ')
+        if [ -z "$pt" ]; then livre=$(lsblk -dbno SIZE "$d"); elif [ "$pt" = gpt ]; then livre=$(livre_bytes "$d"); else livre=0; fi
+        out=$(jq --argjson j "$json" --arg n "$nome" --argjson livre "$livre" '
+            . + [ $j.blockdevices[] | select(.name == $n) | {
+                caminho: .path, nome: .name, tamanho: .size,
+                modelo: ((.model // "") | gsub("^\\s+|\\s+$"; "")),
+                tipo: (if .tran == "nvme" then "nvme" elif .tran == "usb" or .rm == true or .rm == "1" then "usb" else "disco" end),
+                tabela: (.pttype // ""),
+                livre: $livre,
+                particoes: [ (.children // [])[] | select(.type == "part") | {
+                    caminho: .path, tamanho: .size, fs: (.fstype // ""), rotulo: (.label // .partlabel // ""),
+                    esp: ((.parttype // "") == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b"),
+                    windows: ((.fstype // "") == "ntfs" or (.parttype // "") == "e3c9e316-0b5c-4db8-817d-f92df00215ae")
+                } ]
+              } | . + {
+                temWindows: ([.particoes[] | select(.windows)] | length > 0),
+                temLinux: ([.particoes[] | select(.fs == "ext4" or .fs == "btrfs" or .fs == "xfs")] | length > 0),
+                temEsp: ([.particoes[] | select(.esp)] | length > 0)
+              } ]' <<<"$out")
+    done < <(lsblk -dno NAME,TYPE | awk '$2=="disk" && $1 !~ /^(loop|zram|sr)/ {print $1}')
+    echo "$out"
+}
+
+# ---------------------------------------------------------------- instalação
+
+# partições do disco, uma por linha
+particoes() { lsblk -lnpo NAME,TYPE "$1" | awk '$2=="part"{print $1}'; }
+# cria uma partição no maior espaço livre e devolve o caminho dela
+nova_particao() {
+    local disco=$1 tam=$2 tipo=$3 nome=$4 antes depois
+    antes=$(particoes "$disco")
+    sgdisk -n "0:0:$tam" -t "0:$tipo" -c "0:$nome" "$disco" >/dev/null
+    partprobe "$disco"; udevadm settle
+    depois=$(particoes "$disco")
+    comm -13 <(sort <<<"$antes") <(sort <<<"$depois") | head -1
+}
+
+validar() {
+    [ -b "$DISCO" ] || erro "O disco $DISCO não existe mais. Ele foi desconectado?"
+    [ "$(lsblk -dno TYPE "$DISCO")" = disk ] || erro "$DISCO não é um disco inteiro."
+    [[ "$USUARIO" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || erro "Nome de usuário inválido: use letras minúsculas, números, - ou _."
+    [[ "$MAQUINA" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,62}$ ]] || erro "Nome do computador inválido: use letras, números e hífen."
+    [ -n "$SENHA" ] || erro "A senha está vazia."
+    [ -f "/usr/share/zoneinfo/$FUSO" ] || erro "Fuso horário desconhecido: $FUSO"
+    [[ "$TECLADO_CONSOLE" =~ ^[A-Za-z0-9_.-]+$ && "$TECLADO_XKB" =~ ^[a-z,]+$ && "$TECLADO_VARIANTE" =~ ^[a-z0-9_,]*$ ]] || erro "Layout de teclado inválido."
+    [[ "$IDIOMA" =~ ^[a-z]{2}_[A-Z]{2}\.UTF-8$ ]] || erro "Idioma inválido: $IDIOMA"
+    [[ "$TEMA" =~ ^[a-z0-9-]+$ && "$WALLPAPER" =~ ^[a-z0-9-]+$ ]] || erro "Tema ou wallpaper inválido."
+    [[ "$MODO" = apagar || "$MODO" = livre ]] || erro "Modo de instalação desconhecido: $MODO"
+    if [ "$MODO" = livre ]; then
+        eh_uefi || erro "Instalar ao lado de outro sistema precisa de um computador com UEFI."
+        [ "$(lsblk -dno PTTYPE "$DISCO" | tr -d ' ')" = gpt ] || erro "Para instalar ao lado de outro sistema o disco precisa usar GPT."
+        [ "$(livre_bytes "$DISCO")" -ge $((MIN_GB * 1024 ** 3)) ] || erro "Falta espaço livre: são precisos pelo menos ${MIN_GB} GB sem partição no disco."
+    else
+        [ "$(lsblk -dbno SIZE "$DISCO")" -ge $((MIN_GB * 1024 ** 3)) ] || erro "O disco é pequeno demais: são precisos pelo menos ${MIN_GB} GB."
+    fi
+    eh_uefi || CRIPTO=0   # sem UEFI usamos GRUB com /boot dentro da raiz, que não combina com criptografia
+}
+
+instalar() {
+    validar
+    exec > >(tee -a "$LOG") 2>&1
+    echo "=== CypherOS $VERSAO · $(date) · disco $DISCO · modo $MODO · cripto $CRIPTO · uefi $(eh_uefi && echo sim || echo não)"
+
+    ETAPA_ATUAL="preparação"
+    etapa preparar "Preparando o computador"
+    progresso 1
+    limpar
+    swapoff -a 2>/dev/null || true
+    timedatectl set-ntp true 2>/dev/null || true
+    tem_internet || erro "Sem internet. Conecte-se a uma rede e tente de novo."
+
+    ETAPA_ATUAL="particionamento"
+    etapa particionar "Organizando o disco"
+    local ESP="" XBOOT="" RAIZ="" BOOTMODO
+    if [ "$MODO" = apagar ]; then
+        wipefs -af "$DISCO" >/dev/null
+        sgdisk -Z "$DISCO" >/dev/null 2>&1 || true
+        if eh_uefi; then
+            sgdisk -n1:0:+1G -t1:ef00 -c1:CYPHER_EFI -n2:0:0 -t2:8300 -c2:CYPHER_ROOT "$DISCO" >/dev/null
+            BOOTMODO=uefi
+        else
+            sgdisk -n1:0:+1M -t1:ef02 -c1:CYPHER_BIOS -n2:0:0 -t2:8300 -c2:CYPHER_ROOT "$DISCO" >/dev/null
+            BOOTMODO=bios
+        fi
+        partprobe "$DISCO"; udevadm settle
+        mapfile -t PARTS < <(particoes "$DISCO")
+        [ "$BOOTMODO" = uefi ] && ESP="${PARTS[0]}"
+        RAIZ="${PARTS[1]}"
+    else
+        # ao lado de outro sistema: nada existente é apagado, só o espaço livre é usado
+        ESP=$(lsblk -lnpo NAME,PARTTYPE "$DISCO" | awk '$2=="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"{print $1; exit}')
+        if [ -n "$ESP" ]; then
+            # a ESP do Windows costuma ter 100 MB: o carregador vai nela, o kernel numa partição de boot própria
+            XBOOT=$(nova_particao "$DISCO" +1G ea00 CYPHER_BOOT)
+            BOOTMODO=xbootldr
+        else
+            ESP=$(nova_particao "$DISCO" +1G ef00 CYPHER_EFI)
+            BOOTMODO=uefi-novo
+        fi
+        RAIZ=$(nova_particao "$DISCO" 0 8300 CYPHER_ROOT)
+    fi
+    [ -b "$RAIZ" ] || erro "Não consegui criar a partição do sistema."
+    progresso 4
+
+    local DISPOSITIVO="$RAIZ"
+    if [ "$CRIPTO" = 1 ]; then
+        ETAPA_ATUAL="criptografia"
+        etapa criptografar "Protegendo o disco com criptografia"
+        printf '%s' "$SENHA" | cryptsetup luksFormat --type luks2 --batch-mode --key-file=- "$RAIZ"
+        printf '%s' "$SENHA" | cryptsetup open --key-file=- "$RAIZ" cryptroot
+        DISPOSITIVO=/dev/mapper/cryptroot
+    fi
+
+    ETAPA_ATUAL="formatação"
+    etapa formatar "Preparando o sistema de arquivos com pontos de restauração"
+    case "$BOOTMODO" in
+        uefi|uefi-novo) mkfs.fat -F32 -n CYPHER "$ESP" >/dev/null ;;
+        xbootldr) mkfs.fat -F32 -n CYPHERBOOT "$XBOOT" >/dev/null ;;   # a ESP que já existe não é formatada
+    esac
+    mkfs.btrfs -f -L cypheros "$DISPOSITIVO" >/dev/null
+    mount "$DISPOSITIVO" /mnt
+    for sv in @ @home @log @cache @snapshots; do btrfs subvolume create "/mnt/$sv" >/dev/null; done
+    # o sistema dá boot pelo subvolume padrão: é isso que permite voltar a um snapshot (snapper rollback)
+    btrfs subvolume set-default "$(btrfs subvolume list /mnt | awk '$NF=="@"{print $2}')" /mnt
+    umount /mnt
+    local OPT=noatime,compress=zstd:1,space_cache=v2
+    mount -o "$OPT" "$DISPOSITIVO" /mnt
+    mount --mkdir -o "$OPT,subvol=@home" "$DISPOSITIVO" /mnt/home
+    mount --mkdir -o "$OPT,subvol=@log" "$DISPOSITIVO" /mnt/var/log
+    mount --mkdir -o "$OPT,subvol=@cache" "$DISPOSITIVO" /mnt/var/cache/pacman/pkg
+    mount --mkdir -o "$OPT,subvol=@snapshots" "$DISPOSITIVO" /mnt/.snapshots
+    case "$BOOTMODO" in
+        uefi|uefi-novo) mount --mkdir "$ESP" /mnt/boot ;;
+        xbootldr) mount --mkdir "$ESP" /mnt/efi; mount --mkdir "$XBOOT" /mnt/boot ;;
+    esac
+    progresso 7
+
+    ETAPA_ATUAL="download e instalação"
+    etapa baixar "Baixando e instalando o sistema"
+    local UCODE=() EXTRA=()
+    grep -q GenuineIntel /proc/cpuinfo && UCODE=(intel-ucode)
+    grep -q AuthenticAMD /proc/cpuinfo && UCODE=(amd-ucode)
+    [ "$BOOTMODO" = bios ] && EXTRA+=(grub)
+    mapfile -t PKGS < <(grep -v -e '^#' -e '^$' "$SRC/pacotes.txt")
+    # o pacman não mostra barra fora de um terminal: a porcentagem vem das linhas "(n/total)"
+    local total=0 baixados=0
+    pacstrap -K /mnt base linux linux-firmware sudo nano git btrfs-progs snapper snap-pac \
+        "${UCODE[@]}" "${EXTRA[@]}" "${PKGS[@]}" 2>&1 | while IFS= read -r l; do
+        echo "$l"
+        if [[ "$l" =~ ^Packages\ \(([0-9]+)\) || "$l" =~ ^Pacotes\ \(([0-9]+)\) ]]; then
+            total=${BASH_REMATCH[1]}
+        elif [[ "$total" -gt 0 && "$l" =~ (downloading|baixando) ]]; then
+            baixados=$((baixados + 1))
+            if [ "$baixados" -le "$total" ]; then progresso $((7 + baixados * 38 / total)); fi
+        elif [[ "$l" =~ ^\(\ *([0-9]+)/([0-9]+)\)\ (installing|instalando|reinstalling|reinstalando) ]]; then
+            progresso $((45 + BASH_REMATCH[1] * 35 / BASH_REMATCH[2]))
+        fi
+    done
+    # sem subvolid no fstab, e a raiz sem subvol: assim um rollback troca a raiz sem editar nada
+    genfstab -U /mnt | sed -E 's/,subvolid=[0-9]+//; s/,subvol=\/@(,|\s)/\1/' >> /mnt/etc/fstab
+    progresso 80
+
+    ETAPA_ATUAL="visual do CypherOS"
+    etapa visual "Colocando a cara do CypherOS"
+    "$SRC/instalar-arquivos.sh" /mnt >/dev/null
+    local CFG=/mnt/etc/skel/.config/cypheros/config.json tmp
+    tmp=$(mktemp)
+    jq --arg n "${NOME%% *}" --arg t "$TEMA" --arg w "$WALLPAPER" --arg k "$TECLADO_XKB" --arg v "$TECLADO_VARIANTE" \
+       '.userName = $n | .theme = $t | .wallpaperMode = "shader" | .wallpaperShader = $w | .kbLayout = $k | .kbVariant = $v' "$CFG" > "$tmp"
+    install -m644 "$tmp" "$CFG"; rm -f "$tmp"
+    for f in /mnt/etc/skel/.config/hypr/hyprland.conf /mnt/etc/cypheros/greeter/hyprland.conf; do
+        [ -f "$f" ] || continue
+        sed -i -E "s/^(\s*)kb_layout = .*/\1kb_layout = $TECLADO_XKB\n\1kb_variant = $TECLADO_VARIANTE/" "$f"
+    done
+    progresso 84
+
+    ETAPA_ATUAL="configuração"
+    etapa configurar "Configurando idioma, horário e sua conta"
+    ln -sf "/usr/share/zoneinfo/$FUSO" /mnt/etc/localtime
+    arch-chroot /mnt hwclock --systohc
+    sed -i "s/^#\(${IDIOMA%.UTF-8}.UTF-8\)/\1/; s/^#en_US.UTF-8/en_US.UTF-8/" /mnt/etc/locale.gen
+    arch-chroot /mnt locale-gen >/dev/null
+    echo "LANG=$IDIOMA" > /mnt/etc/locale.conf
+    echo "KEYMAP=$TECLADO_CONSOLE" > /mnt/etc/vconsole.conf
+    echo "$MAQUINA" > /mnt/etc/hostname
+    printf '127.0.0.1 localhost\n::1 localhost\n127.0.1.1 %s\n' "$MAQUINA" > /mnt/etc/hosts
+    arch-chroot /mnt useradd -m -G wheel,video,audio,input -s /bin/zsh -c "$NOME" "$USUARIO"
+    printf '%s:%s\n' "$USUARIO" "$SENHA" | arch-chroot /mnt chpasswd
+    printf 'root:%s\n' "$SENHA" | arch-chroot /mnt chpasswd
+    echo '%wheel ALL=(ALL:ALL) ALL' > /mnt/etc/sudoers.d/10-wheel
+    chmod 440 /mnt/etc/sudoers.d/10-wheel
+    arch-chroot /mnt systemctl enable NetworkManager bluetooth >/dev/null 2>&1
+    progresso 87
+
+    ETAPA_ATUAL="pontos de restauração"
+    etapa snapshots "Ligando os pontos de restauração"
+    arch-chroot /mnt /bin/bash -e <<'SNAP'
+umount /.snapshots && rm -rf /.snapshots
+snapper --no-dbus -c root create-config /
+btrfs subvolume delete /.snapshots >/dev/null
+mkdir /.snapshots && mount /.snapshots && chmod 750 /.snapshots
+sed -i 's/^ALLOW_GROUPS=.*/ALLOW_GROUPS="wheel"/; s/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/; s/^NUMBER_LIMIT=.*/NUMBER_LIMIT="12"/; s/^NUMBER_LIMIT_IMPORTANT=.*/NUMBER_LIMIT_IMPORTANT="6"/' /etc/snapper/configs/root
+chown :wheel /.snapshots
+systemctl enable snapper-cleanup.timer >/dev/null 2>&1
+fc-cache -f >/dev/null
+SNAP
+    progresso 89
+
+    ETAPA_ATUAL="inicialização"
+    etapa boot "Instalando o carregador de inicialização"
+    local RAIZ_OPCOES
+    if [ "$CRIPTO" = 1 ]; then
+        local LUKS
+        LUKS=$(blkid -s UUID -o value "$RAIZ")
+        if grep -qE '^HOOKS=.*\bsystemd\b' /mnt/etc/mkinitcpio.conf; then
+            sed -i -E '/^HOOKS=/ s/\bfilesystems\b/sd-encrypt filesystems/' /mnt/etc/mkinitcpio.conf
+            RAIZ_OPCOES="rd.luks.name=$LUKS=cryptroot root=/dev/mapper/cryptroot"
+        else
+            sed -i -E '/^HOOKS=/ s/\bfilesystems\b/encrypt filesystems/' /mnt/etc/mkinitcpio.conf
+            RAIZ_OPCOES="cryptdevice=UUID=$LUKS:cryptroot root=/dev/mapper/cryptroot"
+        fi
+    else
+        RAIZ_OPCOES="root=UUID=$(blkid -s UUID -o value "$RAIZ")"
+    fi
+    RAIZ_OPCOES="$RAIZ_OPCOES rw rootfstype=btrfs quiet splash loglevel=3"
+
+    if [ "$BOOTMODO" = bios ]; then
+        arch-chroot /mnt grub-install --target=i386-pc "$DISCO" >/dev/null
+        sed -i -E 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=2/; s/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="CypherOS"/' /mnt/etc/default/grub
+        sed -i -E "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=3 quiet splash\"|" /mnt/etc/default/grub
+        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+    else
+        local LOADER=/mnt/boot/loader TIMEOUT=2
+        if [ "$BOOTMODO" = xbootldr ]; then
+            arch-chroot /mnt bootctl install --esp-path=/efi --boot-path=/boot >/dev/null
+            LOADER=/mnt/efi/loader
+            TIMEOUT=5     # dá tempo de escolher o outro sistema no menu
+        else
+            arch-chroot /mnt bootctl install >/dev/null
+        fi
+        [ "$MODO" = livre ] && TIMEOUT=5
+        printf 'default cypheros.conf\ntimeout %s\nconsole-mode max\n' "$TIMEOUT" > "$LOADER/loader.conf"
+        install -d /mnt/boot/loader/entries
+        {
+            echo 'title   CypherOS'
+            echo 'linux   /vmlinuz-linux'
+            if [ "${#UCODE[@]}" -gt 0 ]; then echo "initrd  /${UCODE[0]}.img"; fi
+            echo 'initrd  /initramfs-linux.img'
+            echo "options $RAIZ_OPCOES"
+        } > /mnt/boot/loader/entries/cypheros.conf
+    fi
+    progresso 92
+
+    ETAPA_ATUAL="tela de login e boot animado"
+    etapa login "Ligando a tela de login e o boot animado"
+    CYPHER_ROOT=/mnt "$SRC/ativar-login-e-boot.sh" login boot
+    progresso 99
+
+    ETAPA_ATUAL="finalização"
+    sync
+    limpar
+    progresso 100
+    etapa pronto "CypherOS instalado"
+    [ "$GUI" = 1 ] && echo "@fim" || echo "${C}◆ CypherOS instalado!${R} Tire o pendrive e reinicie: ${V}reboot${R}"
+}
+
+# ---------------------------------------------------------------- modo gráfico (JSON)
+
+instalar_com_config() {
+    local arq=$1 j
+    [ -f "$arq" ] || erro "Arquivo de configuração não encontrado: $arq"
+    j=$(cat "$arq"); rm -f "$arq"
+    campo() { jq -r "$1 // empty" <<<"$j"; }
+    DISCO=$(campo .disco); MODO=$(campo .modo); CRIPTO=$(jq -r 'if .criptografar then 1 else 0 end' <<<"$j")
+    NOME=$(campo .nome); USUARIO=$(campo .usuario); SENHA=$(campo .senha); MAQUINA=$(campo .maquina)
+    FUSO=$(campo .fuso); IDIOMA=$(campo .idioma)
+    TECLADO_XKB=$(campo .teclado.xkb); TECLADO_VARIANTE=$(campo .teclado.variante); TECLADO_CONSOLE=$(campo .teclado.console)
+    TEMA=$(campo .tema); WALLPAPER=$(campo .wallpaper)
+    : "${NOME:=$USUARIO}" "${IDIOMA:=pt_BR.UTF-8}" "${TEMA:=prisma}" "${WALLPAPER:=aurora}"
+    instalar
+}
+
+# ---------------------------------------------------------------- modo texto
+
+modo_texto() {
+    pergunta() { local v; read -rp "${V}?${R} $1 ${M}[$2]${R} " v; echo "${v:-$2}"; }
+    clear
+    cat <<BANNER
+${C}
+        ▄▄▄▄
+     ▄▀▀    ▀▀▄       ${R}Instalador do CypherOS $VERSAO (modo texto)${C}
+   ▄▀  ${V}▄▀▀▀▀▄${C}  ▀▄     ${M}o instalador gráfico abre sozinho na sessão ao vivo${C}
+  █   ${V}█      █${C}   █
+   ▀▄  ${V}▀▄▄▄▄▀${C}  ▄▀
+     ▀▄▄    ▄▄▀
+        ▀▀▀▀${R}
+BANNER
+    tem_internet || erro "Sem internet. Conecte no Wi-Fi pelo painel (canto superior direito) ou rode: nmtui"
+    echo "Discos encontrados:"
+    lsblk -dpno NAME,SIZE,MODEL | grep -Ev 'loop|sr[0-9]|zram' | nl -w2 -s'  '
+    mapfile -t DISCOS < <(lsblk -dpno NAME | grep -Ev 'loop|sr[0-9]|zram')
+    local n; n=$(pergunta "Número do disco para instalar" 1)
+    DISCO="${DISCOS[$((n-1))]:-}"
+    MODO=apagar; CRIPTO=0
+    USUARIO=$(pergunta "Seu nome de usuário (minúsculo, sem espaço)" cypher)
+    NOME="${USUARIO^}"
+    while true; do
+        read -rsp "${V}?${R} Senha: " SENHA; echo
+        read -rsp "${V}?${R} Repita a senha: " SENHA2; echo
+        [ -n "$SENHA" ] && [ "$SENHA" = "$SENHA2" ] && break
+        echo "${P}As senhas não batem, tente de novo.${R}"
+    done
+    MAQUINA=$(pergunta "Nome do computador" cypher)
+    FUSO=$(pergunta "Fuso horário" America/Sao_Paulo)
+    TECLADO_CONSOLE=$(pergunta "Teclado do terminal" br-abnt2)
+    TECLADO_XKB=br; TECLADO_VARIANTE=""; IDIOMA=pt_BR.UTF-8; TEMA=prisma; WALLPAPER=aurora
+    echo; echo "${P}Tudo em ${DISCO} será APAGADO.${R}"; lsblk "$DISCO"
+    local ok; read -rp "${V}?${R} Para confirmar, digite ${P}APAGAR${R}: " ok
+    [ "$ok" = "APAGAR" ] || erro "Cancelado. Nada foi alterado."
+    instalar
+}
+
+case "${1:-}" in
+    --checar) trap - ERR; checar ;;
+    --discos) trap - ERR; [ "$(id -u)" -eq 0 ] || { echo "[]"; exit 1; }; discos ;;
+    --config)
+        [ "$(id -u)" -eq 0 ] || { echo "@erro O instalador precisa de permissão de administrador."; exit 1; }
+        GUI=1; : > "$LOG"; instalar_com_config "${2:?informe o arquivo}" ;;
+    "")
+        [ "$(id -u)" -eq 0 ] || erro "Rode com sudo: sudo cypher-instalar"
+        modo_texto ;;
+    *) echo "uso: cypher-instalar [--checar | --discos | --config <arquivo.json>]"; exit 1 ;;
+esac

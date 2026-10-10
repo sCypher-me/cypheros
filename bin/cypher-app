@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# cypher-app <central|loja|monitor|instalador> [página]: abre um app do CypherOS (ou foca, se já estiver aberto).
+set -euo pipefail
+app="${1:?use: cypher-app central|loja|monitor|instalador}"
+case "$app" in
+    central) titulo="Central" ;;
+    loja)    titulo="Loja Cypher" ;;
+    monitor) titulo="Monitor do sistema" ;;
+    instalador) titulo="Instalar o CypherOS" ;;   # só existe na ISO
+    *) echo "app desconhecido: $app"; exit 1 ;;
+esac
+[ -n "${2:-}" ] && echo "$2" > "${XDG_RUNTIME_DIR:-/tmp}/cypheros-$app-pagina"
+if pgrep -f "qs -c cypheros-$app\$" >/dev/null; then
+    hyprctl dispatch focuswindow "title:^CypherOS · $titulo\$" >/dev/null
+else
+    setsid qs -c "cypheros-$app" >/dev/null 2>&1 &
+fi

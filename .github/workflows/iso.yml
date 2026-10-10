@@ -1,0 +1,72 @@
+# Gera a ISO do CypherOS nos computadores do GitHub (não precisa ter Arch).
+# Roda sozinho a cada envio para o GitHub e também pelo botão "Run workflow" na aba Actions.
+# A ISO aparece em "Releases" (se couber no limite de 2 GB) e sempre em "Artifacts" da execução.
+name: Gerar ISO
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # a máquina do GitHub vem com uns 14 GB livres; a ISO precisa de mais
+      - name: Liberar espaço
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+          sudo docker image prune -af
+          df -h /
+
+      - name: Gerar a ISO dentro de um Arch
+        run: |
+          docker run --rm --privileged \
+            -v "$GITHUB_WORKSPACE:/cypheros" -w /cypheros \
+            -e CYPHER_WORK=/cypheros/.trabalho \
+            archlinux:latest bash -c '
+              set -e
+              pacman -Syu --noconfirm --needed archiso qt6-shadertools jq git
+              ./iso/build-iso.sh
+            '
+          sudo chown -R "$(id -u):$(id -g)" saida
+          ls -lh saida
+
+      - name: Preparar
+        id: iso
+        run: |
+          ISO=$(ls saida/cypheros-*.iso | head -1)
+          echo "arquivo=$ISO" >> "$GITHUB_OUTPUT"
+          echo "nome=$(basename "$ISO")" >> "$GITHUB_OUTPUT"
+          TAM=$(stat -c %s "$ISO")
+          echo "cabe=$([ "$TAM" -lt 2000000000 ] && echo sim || echo nao)" >> "$GITHUB_OUTPUT"
+          sha256sum "$ISO" > "$ISO.sha256"
+
+      - name: Guardar como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.iso.outputs.nome }}
+          path: |
+            ${{ steps.iso.outputs.arquivo }}
+            ${{ steps.iso.outputs.arquivo }}.sha256
+          compression-level: 0
+          retention-days: 30
+
+      - name: Publicar em Releases
+        if: steps.iso.outputs.cabe == 'sim'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: iso-${{ github.run_number }}
+          name: CypherOS (build ${{ github.run_number }})
+          body: |
+            Baixe o arquivo .iso abaixo e grave num pendrive com o Rufus ou o balenaEtcher.
+            O instalador gráfico abre sozinho quando o pendrive der boot.
+          files: |
+            ${{ steps.iso.outputs.arquivo }}
+            ${{ steps.iso.outputs.arquivo }}.sha256

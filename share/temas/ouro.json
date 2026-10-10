@@ -1,0 +1,13 @@
+{
+  "name": "Ouro",
+  "author": "CypherOS",
+  "bg": "#0E0B06",
+  "glass": "#1C160C",
+  "text": "#FFF8EA",
+  "muted": "#CFC0A0",
+  "accent": "#FACC15",
+  "accent2": "#FB923C",
+  "hot": "#F472B6",
+  "ok": "#A3E635",
+  "wallpaper": "aurora"
+}

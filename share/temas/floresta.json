@@ -1,0 +1,13 @@
+{
+  "name": "Floresta",
+  "author": "CypherOS",
+  "bg": "#06100C",
+  "glass": "#0E1C16",
+  "text": "#ECFFF4",
+  "muted": "#9FBFAE",
+  "accent": "#4ADE80",
+  "accent2": "#2DD4BF",
+  "hot": "#FBBF24",
+  "ok": "#86EFAC",
+  "wallpaper": "particulas"
+}

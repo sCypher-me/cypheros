@@ -1,0 +1,102 @@
+{
+  "default": {
+    "x": 5,
+    "y": 3
+  },
+  "pointer": {
+    "x": 13,
+    "y": 3
+  },
+  "grab": {
+    "x": 15,
+    "y": 16
+  },
+  "grabbing": {
+    "x": 16,
+    "y": 17
+  },
+  "text": {
+    "x": 16,
+    "y": 16
+  },
+  "crosshair": {
+    "x": 16,
+    "y": 16
+  },
+  "move": {
+    "x": 16,
+    "y": 16
+  },
+  "ns-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "ew-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "nesw-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "nwse-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "col-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "row-resize": {
+    "x": 16,
+    "y": 16
+  },
+  "not-allowed": {
+    "x": 16,
+    "y": 16
+  },
+  "help": {
+    "x": 5,
+    "y": 3
+  },
+  "context-menu": {
+    "x": 5,
+    "y": 3
+  },
+  "copy": {
+    "x": 5,
+    "y": 3
+  },
+  "alias": {
+    "x": 5,
+    "y": 3
+  },
+  "zoom-in": {
+    "x": 13,
+    "y": 13
+  },
+  "zoom-out": {
+    "x": 13,
+    "y": 13
+  },
+  "wait": {
+    "x": 16,
+    "y": 16,
+    "quadros": 12,
+    "atraso": 60,
+    "centro": [
+      16,
+      16
+    ]
+  },
+  "progress": {
+    "x": 5,
+    "y": 3,
+    "quadros": 12,
+    "atraso": 60,
+    "centro": [
+      23,
+      23
+    ]
+  }
+}
