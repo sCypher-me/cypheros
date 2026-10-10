@@ -1,0 +1,7 @@
+[32m  INFO[0m: Launching config: "/etc/xdg/quickshell/cypheros-central/shell.qml"
+[32m  INFO[0m: Shell ID: "7955c8d02fc36939cadd11264f5f0ba6" Path ID "7955c8d02fc36939cadd11264f5f0ba6"
+[32m  INFO[0m: Saving logs to "/tmp/rt/quickshell/by-id/ee1euipmt/log.qslog"
+[33m  WARN[97m scene[0m: @pages/Aparencia.qml[9:1]: Page is not a type
+[32m  INFO[0m: Configuration Loaded
+[33m  WARN[97m scene[0m: QML FileView at @shell.qml[45:9]: Read of /tmp/rt/cypheros-central-pagina failed: File does not exist.
+[33m  WARN[97m qt.qpa.wayland.textinput[0m: virtual void QtWaylandClient::QWaylandTextInputv3::disableSurface(wl_surface*) Trying to disable 0x7fd7d2201720 but 0x0 is focused

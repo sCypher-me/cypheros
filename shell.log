@@ -1,0 +1,16 @@
+[32m  INFO[0m: Launching config: "/etc/xdg/quickshell/cypheros/shell.qml"
+[32m  INFO[0m: Shell ID: "93760e737704b45ad07b83beb963ea56" Path ID "93760e737704b45ad07b83beb963ea56"
+[32m  INFO[0m: Saving logs to "/tmp/rt/quickshell/by-id/ca1rtipmt/log.qslog"
+[33m  WARN[0m: $HYPRLAND_INSTANCE_SIGNATURE is unset. Cannot connect to hyprland.
+[31m ERROR[97m quickshell.service.pipewire.loop[0m: Failed to connect pipewire context. Errno: 112
+[33m  WARN[97m quickshell.service.mpris.watcher[0m: Could not connect to DBus. Mpris service will not work.
+[33m  WARN[97m quickshell.bluetooth[0m: Could not connect to DBus. Bluetooth integration is not available.
+[33m  WARN[97m quickshell.service.upower[0m: Could not connect to DBus. UPower service will not work.
+[33m  WARN[97m quickshell.service.sni.watcher[0m: Could not connect to DBus. StatusNotifier service will not work.
+[33m  WARN[97m quickshell.service.sni.host[0m: Could not connect to DBus. StatusNotifier service will not work.
+[33m  WARN[97m quickshell.service.notifications[0m: Could not connect to DBus. Notification service will not work.
+[32m  INFO[0m: Configuration Loaded
+[33m  WARN[97m scene[0m: QML FileView at @services/Agenda.qml[27:5]: Read of /root/.config/cypheros/agenda.json failed: File does not exist.
+[33m  WARN[97m scene[0m: QML FileView at @modules/welcome/Welcome.qml[26:5]: Read of /root/.config/cypheros/.boas-vindas-ok failed: File does not exist.
+[33m  WARN[97m scene[0m: QML FileView at @services/Notes.qml[19:5]: Read of /root/.config/cypheros/notas.md failed: File does not exist.
+[33m  WARN[97m quickshell.io.fileview[0m: got operation finished from dropped operation qs::io::FileViewOperation(0x7f2e901865c0)

@@ -1,0 +1,8 @@
+[32m  INFO[0m: Launching config: "/etc/xdg/quickshell/cypheros-loja/shell.qml"
+[32m  INFO[0m: Shell ID: "1844e70fa41f573a2f47946540f86842" Path ID "1844e70fa41f573a2f47946540f86842"
+[32m  INFO[0m: Saving logs to "/tmp/rt/quickshell/by-id/9f1muipmt/log.qslog"
+[32m  INFO[0m: Configuration Loaded
+[33m  WARN[97m scene[0m: QML FileView at @dados/Loja.qml[60:5]: Read of /tmp/rt/cypheros-loja-fim failed: File does not exist.
+[33m  WARN[97m scene[0m: QML FileView at @dados/Loja.qml[53:5]: Read of /tmp/rt/cypheros-loja-pagina failed: File does not exist.
+[33m  WARN[97m quickshell.io.fileview[0m: got operation finished from dropped operation qs::io::FileViewOperation(0x7f19b2973ea0)
+[33m  WARN[97m qt.qpa.wayland.textinput[0m: virtual void QtWaylandClient::QWaylandTextInputv3::disableSurface(wl_surface*) Trying to disable 0x7f19b0c33be0 but 0x0 is focused

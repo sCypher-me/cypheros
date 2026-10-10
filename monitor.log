@@ -1,0 +1,6 @@
+[32m  INFO[0m: Launching config: "/etc/xdg/quickshell/cypheros-monitor/shell.qml"
+[32m  INFO[0m: Shell ID: "03afe77dbf31677473baa8c95e56d8b3" Path ID "03afe77dbf31677473baa8c95e56d8b3"
+[32m  INFO[0m: Saving logs to "/tmp/rt/quickshell/by-id/8g1uuipmt/log.qslog"
+[31m ERROR[0m: Failed to load configuration
+[31m ERROR[0m:   caused by @shell.qml[143:17]: Type Overview unavailable
+[31m ERROR[0m:   caused by @parts/Overview.qml[83:41]: Invalid property assignment: "implicitHeight" is a read-only property
