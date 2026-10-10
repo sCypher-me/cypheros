@@ -69,7 +69,7 @@ PanelWindow {
                                 model: modelData.items
                                 delegate: Rectangle {
                                     required property var modelData
-                                    readonly property bool lit: modelData.toggle && Capture.withAudio
+                                    readonly property bool lit: !!modelData.toggle && Capture.withAudio
                                     width: 64 * Theme.s; height: 58 * Theme.s
                                     radius: 14 * Theme.s
                                     color: lit ? Qt.alpha(Theme.accent, 0.16) : m.containsMouse ? Theme.hover : Qt.rgba(1, 1, 1, 0.05)

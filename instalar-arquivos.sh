@@ -46,6 +46,7 @@ fi
 install -m755 "$SRC/bin/cypher" "$ROOT/usr/bin/cypher"
 install -m755 "$SRC/bin/cypher-term" "$ROOT/usr/bin/cypher-term"
 install -m755 "$SRC/bin/cypher-app" "$ROOT/usr/bin/cypher-app"
+install -m755 "$SRC/bin/cypher-shell" "$ROOT/usr/bin/cypher-shell"
 install -m755 "$SRC/bin/cypher-aplicar-padrao" "$ROOT/usr/bin/cypher-aplicar-padrao"
 install -m755 "$SRC/ativar-login-e-boot.sh" "$ROOT/usr/share/cypheros/ativar-login-e-boot.sh"
 install -m644 "$SRC/share/logo.txt" "$ROOT/usr/share/cypheros/logo.txt"

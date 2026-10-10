@@ -142,7 +142,7 @@ PanelWindow {
         return top
     }
 
-    readonly property bool aiMode: Ui.launcherMode === "ia" || (Ui.launcherMode === "apps" && query.trimStart().startsWith("?"))
+    readonly property bool aiMode: Ui.launcherMode === "ia" || (Ui.launcherMode === "apps" && query.replace(/^\s+/, "").startsWith("?"))
 
     function launch(item) {
         if (!item) return

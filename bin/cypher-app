@@ -13,5 +13,5 @@ esac
 if pgrep -f "qs -c cypheros-$app\$" >/dev/null; then
     hyprctl dispatch focuswindow "title:^CypherOS · $titulo\$" >/dev/null
 else
-    setsid qs -c "cypheros-$app" >/dev/null 2>&1 &
+    setsid cypher-shell "cypheros-$app" >/dev/null 2>&1 &
 fi

@@ -92,7 +92,7 @@ case "${1:-ajuda}" in
     loja) cypher-app loja "${2:-}" ;;
     monitor) cypher-app monitor ;;
     config) "${EDITOR:-nano}" "$CFG" ;;
-    recarregar) pkill -x quickshell || true; pkill -x qs || true; sleep 0.3; setsid qs -c cypheros >/dev/null 2>&1 & echo "${M}shell reiniciado${R}" ;;
+    recarregar) pkill -x quickshell || true; pkill -x qs || true; sleep 0.3; setsid cypher-shell >/dev/null 2>&1 & echo "${M}shell reiniciado${R}" ;;
     atualizar)
         tem_snapper && echo "${M}O snapper guarda um ponto de restauração antes e depois da atualização.${R}"
         sudo pacman -Syu || exit 1

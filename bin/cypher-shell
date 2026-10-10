@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# cypher-shell [config]: abre o shell do CypherOS (ou um app, ex.: cypheros-loja).
+# Se ele cair logo no começo, o driver de vídeo não aguentou o OpenGL (comum em
+# máquina virtual). Aí ele abre de novo desenhando pelo processador: fica sem
+# o wallpaper animado e o desfoque, mas funciona.
+cfg="${1:-cypheros}"
+LOGD="${XDG_CACHE_HOME:-$HOME/.cache}/cypheros"
+mkdir -p "$LOGD"
+inicio=$(date +%s)
+qs -c "$cfg" >"$LOGD/$cfg.log" 2>&1
+st=$?
+# rodou um bom tempo e foi fechado (ou reiniciado pelo "cypher recarregar"): nada a fazer
+[ $(( $(date +%s) - inicio )) -ge 15 ] && exit "$st"
+echo "--- caiu em menos de 15 s (código $st); abrindo em modo software ---" >>"$LOGD/$cfg.log"
+if [ "$cfg" = cypheros ]; then
+    ( sleep 5; notify-send -a CypherOS "Modo de vídeo simples" "A placa de vídeo não suportou os efeitos. O CypherOS está funcionando sem o wallpaper animado e o desfoque." ) &
+fi
+QT_QUICK_BACKEND=software exec qs -c "$cfg" >>"$LOGD/$cfg.log" 2>&1
