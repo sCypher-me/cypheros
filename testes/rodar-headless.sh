@@ -19,6 +19,8 @@ cp -r /etc/skel/.config /root/
 export XDG_RUNTIME_DIR=/tmp/rt; mkdir -p -m700 "$XDG_RUNTIME_DIR"
 export WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 WLR_HEADLESS_OUTPUTS=1
 printf 'output HEADLESS-1 resolution 1920x1080\n' > /tmp/sway.conf
+# o sway vem com "capabilities" que o container não deixa usar
+setcap -r "$(command -v sway)" 2>/dev/null || true
 sway -c /tmp/sway.conf > "$OUT/sway.log" 2>&1 &
 for _ in $(seq 50); do [ -S "$XDG_RUNTIME_DIR/wayland-1" ] && break; sleep 0.2; done
 export WAYLAND_DISPLAY=wayland-1 QT_QPA_PLATFORM=wayland QT_QUICK_BACKEND=software
