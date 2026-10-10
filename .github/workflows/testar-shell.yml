@@ -1,0 +1,41 @@
+# Abre o shell e os apps do CypherOS num Arch sem tela e guarda logs e prints.
+# Os prints vão para o ramo "prints" do repositório.
+name: Testar o shell
+
+on:
+  push:
+    branches: [main]
+    paths: ["shell/**", "apps/**", "config/**", "testes/**", ".github/workflows/testar-shell.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Abrir o shell num Arch sem tela
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/cypheros" -w /cypheros archlinux:latest bash -c '
+            pacman -Syu --noconfirm --needed quickshell sway grim qt6-svg qt6-multimedia qt6-shadertools qt6-5compat \
+              ttf-jetbrains-mono noto-fonts noto-fonts-emoji papirus-icon-theme jq networkmanager upower pipewire wireplumber \
+              brightnessctl playerctl cava libnotify >/dev/null
+            echo "quickshell: $(qs --version 2>&1 | head -1)"
+            ./testes/rodar-headless.sh
+          '
+          sudo chown -R "$(id -u):$(id -g)" testes/saida
+      - name: Guardar logs e prints
+        uses: actions/upload-artifact@v4
+        with:
+          name: teste-shell
+          path: testes/saida
+      - name: Publicar os prints no ramo "prints"
+        run: |
+          cd testes/saida
+          git init -q -b prints
+          git config user.name "CypherOS CI"; git config user.email "ci@users.noreply.github.com"
+          git add -A; git commit -qm "prints de ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" prints

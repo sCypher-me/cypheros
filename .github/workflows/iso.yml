@@ -6,7 +6,13 @@ name: Gerar ISO
 on:
   push:
     branches: [main]
+    paths-ignore: ["testes/**", ".github/workflows/testar-shell.yml"]
   workflow_dispatch:
+
+# um envio novo cancela a ISO que ainda estava sendo gerada
+concurrency:
+  group: iso
+  cancel-in-progress: true
 
 permissions:
   contents: write
