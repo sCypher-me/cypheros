@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Sessão ao vivo da ISO do CypherOS (chamada pelo ~/.zprofile no tty1).
+#
+# 1. Tenta abrir o desktop completo (Hyprland). Ele precisa de aceleração 3D.
+# 2. Se o Hyprland não abrir (máquina virtual sem 3D, placa de vídeo sem driver)
+#    ou se a ISO foi iniciada pela opção "modo compatível" do menu de boot,
+#    abre só o instalador gráfico num compositor simples que desenha tudo
+#    pelo processador (cage + Qt em modo software). Fica sem os efeitos de
+#    vidro e sem wallpaper animado, mas tudo continua pelo mouse.
+
+LOG=/tmp/cypher-sessao.log
+C=$'\e[38;2;56;225;255m'; V=$'\e[38;2;167;139;250m'; R=$'\e[0m'
+
+modo_compativel() {
+    export WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1
+    export QT_QUICK_BACKEND=software QT_QPA_PLATFORM=wayland
+    export XDG_CURRENT_DESKTOP=CypherOS XCURSOR_THEME=Prisma-cursor XCURSOR_SIZE=24
+    # o cage não lê a config do Hyprland: teclado ABNT2 por padrão (dá para trocar na tela "Idioma e teclado")
+    export XKB_DEFAULT_LAYOUT="${XKB_DEFAULT_LAYOUT:-br}"
+    while true; do
+        clear
+        echo "${C}◆ CypherOS${R} · abrindo o instalador no modo compatível..."
+        cage -s -d -- qs -c cypheros-instalador >>"$LOG" 2>&1
+        clear
+        echo
+        echo "  ${C}◆ CypherOS${R}"
+        echo
+        echo "  O instalador foi fechado."
+        echo "  Aperte ${V}Enter${R} para abrir de novo."
+        echo
+        read -r _
+    done
+}
+
+seguro=0
+grep -qw "cypher.seguro=1" /proc/cmdline && seguro=1
+# Hyper-V não tem aceleração 3D para Linux: vai direto para o modo compatível
+[ "$(systemd-detect-virt 2>/dev/null)" = microsoft ] && seguro=1
+
+if [ "$seguro" = 0 ]; then
+    # em máquina virtual o cursor por hardware costuma sumir ou deixar a tela preta
+    if systemd-detect-virt -q 2>/dev/null; then
+        grep -q no_hardware_cursors ~/.config/hypr/usuario.conf 2>/dev/null \
+            || echo "cursor:no_hardware_cursors = true" >> ~/.config/hypr/usuario.conf
+    fi
+    clear
+    echo "${C}◆ CypherOS${R} · abrindo o desktop..."
+    inicio=$(date +%s)
+    Hyprland >"$LOG" 2>&1
+    # durou pouco: o Hyprland não conseguiu abrir aqui
+    if [ $(( $(date +%s) - inicio )) -lt 25 ]; then
+        echo "${V}O desktop completo precisa de aceleração 3D, que não está disponível aqui.${R}"
+        sleep 2
+        modo_compativel
+    fi
+    # saiu do desktop pelo menu: abre de novo
+    exec "$0"
+fi
+modo_compativel

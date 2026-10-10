@@ -20,7 +20,7 @@ P="$WORK/perfil"
 
 echo "${C}2/5${R} Adicionando os pacotes do CypherOS..."
 # o instalador gráfico precisa destes (a maioria já vem no releng)
-{ echo; echo "# CypherOS"; grep -v -e '^#' -e '^$' "$SRC/pacotes.txt"; printf '%s\n' git gptfdisk parted cryptsetup dosfstools btrfs-progs grub jq curl; } >> "$P/packages.x86_64"
+{ echo; echo "# CypherOS"; grep -v -e '^#' -e '^$' "$SRC/pacotes.txt"; printf '%s\n' git gptfdisk parted cryptsetup dosfstools btrfs-progs grub jq curl cage; } >> "$P/packages.x86_64"
 # o grml-zsh-config do releng traz um /etc/skel/.zshrc que brigaria com o do CypherOS
 sed -i '/^grml-zsh-config$/d' "$P/packages.x86_64"
 sort -u -o "$P/packages.x86_64" "$P/packages.x86_64"
@@ -34,6 +34,7 @@ sed -i \
 cat >> "$P/profiledef.sh" <<'PD'
 file_permissions+=(
   ["/usr/local/bin/cypher-instalar"]="0:0:755"
+  ["/usr/local/bin/cypher-sessao-ao-vivo"]="0:0:755"
   ["/usr/share/cypheros/src/instalar-arquivos.sh"]="0:0:755"
   ["/usr/share/cypheros/src/ativar-login-e-boot.sh"]="0:0:755"
   ["/usr/share/cypheros/src/bin/cypher"]="0:0:755"
@@ -50,6 +51,7 @@ CYPHER_SET_OSRELEASE=0 "$SRC/instalar-arquivos.sh" "$A"
 install -d "$A/usr/share/cypheros/src"
 cp -r "$SRC/shell" "$SRC/config" "$SRC/bin" "$SRC/share" "$SRC/plymouth" "$SRC/pacotes.txt" "$SRC/instalar-arquivos.sh" "$SRC/ativar-login-e-boot.sh" "$A/usr/share/cypheros/src/"
 install -Dm755 "$SRC/iso/cypher-instalar" "$A/usr/local/bin/cypher-instalar"
+install -Dm755 "$SRC/iso/cypher-sessao-ao-vivo" "$A/usr/local/bin/cypher-sessao-ao-vivo"
 
 # instalador gráfico (só na ISO): app Quickshell que usa os services e components do shell
 I="$A/etc/xdg/quickshell/cypheros-instalador"
@@ -64,6 +66,12 @@ install -Dm644 "$SRC/iso/cypheros-instalador.desktop" "$A/usr/share/applications
 CFG="$A/etc/skel/.config/cypheros/config.json"
 jq '.userName = "CypherOS" | .pinnedApps = (["cypheros-instalador"] + (.pinnedApps - ["cypheros-instalador"]))' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
 touch "$A/etc/skel/.config/cypheros/.boas-vindas-ok"
+# na ISO o tty1 chama a sessão ao vivo: tenta o Hyprland e, se não houver 3D, abre o instalador no modo compatível
+cat > "$A/etc/skel/.zprofile" <<'ZP'
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    exec /usr/local/bin/cypher-sessao-ao-vivo
+fi
+ZP
 cat >> "$A/etc/skel/.config/hypr/usuario.conf" <<'HC'
 # sessão ao vivo: o instalador gráfico abre sozinho (fechou? clique no ícone dele no dock)
 exec-once = sleep 3 && cypher-app instalador
@@ -97,6 +105,11 @@ rm -f "$A/etc/systemd/system/multi-user.target.wants/iwd.service" \
       "$A/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service"
 
 echo "${C}4/5${R} Trocando os nomes do menu de boot para CypherOS..."
+# a opção "com leitor de tela" vira "modo compatível" (máquina virtual ou placa de vídeo sem driver)
+sed -i "s/ with speech$/ · modo compatível (máquina virtual)/" "$P"/efiboot/loader/entries/*speech*.conf 2>/dev/null || true
+sed -i 's/ accessibility=on / cypher.seguro=1 /' "$P"/efiboot/loader/entries/*speech*.conf "$P"/grub/*.cfg "$P"/syslinux/*.cfg 2>/dev/null || true
+sed -i 's/install medium with speakup screen reader (/install medium · modo compatível, máquina virtual (/; s/^play 600 988 1 1319 4$//' "$P"/grub/*.cfg 2>/dev/null || true
+sed -i 's/install medium (%ARCH%, BIOS) with ^speech/install medium · ^modo compatível, máquina virtual (BIOS)/; s/on BIOS with speakup screen reader\./no modo compatível (sem aceleração 3D)./' "$P"/syslinux/*.cfg 2>/dev/null || true
 grep -rl "Arch Linux" "$P/efiboot" "$P/syslinux" "$P/grub" 2>/dev/null | while read -r f; do
     sed -i 's/Arch Linux install medium/CypherOS/g; s/Arch Linux/CypherOS/g' "$f"
 done
